@@ -3,6 +3,12 @@
 
 `ifdef VERILATOR
 `include "include/common.sv"
+`include "src/pipeline/regfile/regfile.sv"
+`include "src/pipeline/fetch/fetch.sv"
+`include "src/pipeline/fetch/IF_ID_reg.sv"
+`include "src/pipeline/fetch/pc_mux.sv"
+`include "src/pipeline/fetch/pc.sv"
+`include "src/pipeline/decode/decode.sv"
 `endif
 
 module core import common::*;(
@@ -14,6 +20,92 @@ module core import common::*;(
 	input  logic       trint, swint, exint
 );
 	/* TODO: Add your CPU-Core here. */
+
+	// IF阶段
+	u1 stallpc, flush;
+	u64 pcplus4, pc_nxt, IF_pc;
+	u64 raw_instr;
+	fetch_data_t dataF, dataF_nxt;
+
+	assign pcplus4 = IF_pc + 4;
+
+	pc_mux pc_mux(
+		.pcplus4,
+		.pc_nxt
+	);
+
+	assign stallpc = ireq.valid && ~iresp.data_ok;
+	pc pc(
+		.clk, .reset,
+		.stallpc,
+		.pc_nxt,
+		.pc(IF_pc)
+	);
+
+	assign ireq.valid = 1'b1;
+	assign ireq.addr = IF_pc;
+	assign raw_instr = iresp.data;
+
+	fetch fetch(
+		.clk, .reset,
+		.raw_instr(raw_instr),
+		.dataF_nxt(dataF_nxt)
+	);
+
+	if_id_reg if_id_reg(
+		.clk, .reset,
+		.dataF_nxt,
+		.dataF
+	);
+
+	// ID阶段
+	decode_data_t dataD, dataD_nxt;
+	creg_addr_t ra1, ra2;
+	u64 rd1, rd2;
+
+	regfile regfile(
+		.clk, .reset,
+		.ra1,
+		.ra2,
+		.rd1,
+		.rd2,
+		.wvalid(),
+		.wa(),
+		.wd()
+	);
+	
+	decode decode (
+		.clk, .reset,
+		.dataF,
+		.dataD_nxt(dataD_nxt),
+
+		.ra1, .ra2, .rd1, .rd2
+	);
+
+
+
+
+
+
+
+
+
+
+	
+	
+	regfile regfile(
+		.clk, .reset,
+		.ra1,
+		.ra2,
+		.rd1,
+		.rd2,
+		.wvalid(),
+		.wa(),
+		.wd()
+	);
+
+
+
 
 `ifdef VERILATOR
 	DifftestInstrCommit DifftestInstrCommit(
