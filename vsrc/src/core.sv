@@ -51,6 +51,7 @@ module core import common::*;(
 
 	fetch fetch(
 		.clk, .reset,
+		.pc(IF_pc),
 		.raw_instr(raw_instr),
 		.dataF_nxt(dataF_nxt)
 	);
@@ -144,7 +145,7 @@ module core import common::*;(
 	);
 
 	// MEM阶段
-	
+
 	mem mem(
 		.clk, .reset,
 		.dataE,
@@ -172,51 +173,51 @@ module core import common::*;(
 		.coreid             (0),
 		.index              (0),
 		.valid              (1'b1),
-		.pc                 (PCINIT),
-		.instr              (0),
+		.pc                 (dataM.pc),
+		.instr              (dataM.raw_instr),
 		.skip               (0),
 		.isRVC              (0),
 		.scFailed           (0),
-		.wen                (0),
-		.wdest              (0),
-		.wdata              (0)
+		.wen                (dataM.ctl.regwrite),
+		.wdest              ({3'b0, dataM.dst}),
+		.wdata              (write_data)
 	);
 
 	DifftestArchIntRegState DifftestArchIntRegState (
 		.clock              (clk),
 		.coreid             (0),
-		.gpr_0              (0),
-		.gpr_1              (0),
-		.gpr_2              (0),
-		.gpr_3              (0),
-		.gpr_4              (0),
-		.gpr_5              (0),
-		.gpr_6              (0),
-		.gpr_7              (0),
-		.gpr_8              (0),
-		.gpr_9              (0),
-		.gpr_10             (0),
-		.gpr_11             (0),
-		.gpr_12             (0),
-		.gpr_13             (0),
-		.gpr_14             (0),
-		.gpr_15             (0),
-		.gpr_16             (0),
-		.gpr_17             (0),
-		.gpr_18             (0),
-		.gpr_19             (0),
-		.gpr_20             (0),
-		.gpr_21             (0),
-		.gpr_22             (0),
-		.gpr_23             (0),
-		.gpr_24             (0),
-		.gpr_25             (0),
-		.gpr_26             (0),
-		.gpr_27             (0),
-		.gpr_28             (0),
-		.gpr_29             (0),
-		.gpr_30             (0),
-		.gpr_31             (0)
+		.gpr_0              (regfile.regs_nxt[0]),
+		.gpr_1              (regfile.regs_nxt[1]),
+		.gpr_2              (regfile.regs_nxt[2]),
+		.gpr_3              (regfile.regs_nxt[3]),
+		.gpr_4              (regfile.regs_nxt[4]),
+		.gpr_5              (regfile.regs_nxt[5]),
+		.gpr_6              (regfile.regs_nxt[6]),
+		.gpr_7              (regfile.regs_nxt[7]),
+		.gpr_8              (regfile.regs_nxt[8]),
+		.gpr_9              (regfile.regs_nxt[9]),
+		.gpr_10             (regfile.regs_nxt[10]),
+		.gpr_11             (regfile.regs_nxt[11]),
+		.gpr_12             (regfile.regs_nxt[12]),
+		.gpr_13             (regfile.regs_nxt[13]),
+		.gpr_14             (regfile.regs_nxt[14]),
+		.gpr_15             (regfile.regs_nxt[15]),
+		.gpr_16             (regfile.regs_nxt[16]),
+		.gpr_17             (regfile.regs_nxt[17]),
+		.gpr_18             (regfile.regs_nxt[18]),
+		.gpr_19             (regfile.regs_nxt[19]),
+		.gpr_20             (regfile.regs_nxt[20]),
+		.gpr_21             (regfile.regs_nxt[21]),
+		.gpr_22             (regfile.regs_nxt[22]),
+		.gpr_23             (regfile.regs_nxt[23]),
+		.gpr_24             (regfile.regs_nxt[24]),
+		.gpr_25             (regfile.regs_nxt[25]),
+		.gpr_26             (regfile.regs_nxt[26]),
+		.gpr_27             (regfile.regs_nxt[27]),
+		.gpr_28             (regfile.regs_nxt[28]),
+		.gpr_29             (regfile.regs_nxt[29]),
+		.gpr_30             (regfile.regs_nxt[30]),
+		.gpr_31             (regfile.regs_nxt[31])
 	);
 
     DifftestTrapEvent DifftestTrapEvent(

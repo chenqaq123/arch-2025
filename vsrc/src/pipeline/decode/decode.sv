@@ -20,6 +20,9 @@ module decode
     output decode_data_t dataD_nxt,
 );
 
+    assign dataD_nxt.pc = dataF.pc;
+    assign dataD_nxt.raw_instr = dataF.raw_instr;
+    
     assign dataD_nxt.ctl = ctl;
     assign dataD_nxt.dst = dataF.raw_instr[11:7];
 

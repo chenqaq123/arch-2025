@@ -15,6 +15,8 @@ module execute
     input u64 alu_out,
     output execute_data_t dataE_nxt
 );
+    assign dataE_nxt.pc = dataD.pc;
+    assign dataE_nxt.raw_instr = dataD.raw_instr;
 
     assign dataE_nxt.alu_out = alu_out;
     assign dataE_nxt.ctl = dataD.ctl;    

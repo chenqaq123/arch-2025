@@ -42,6 +42,7 @@ typedef enum logic [2:0] {
 } ImmGenType;
 
 typedef struct packed {
+	u64 pc;
 	u32 raw_instr;
 } fetch_data_t;
 
@@ -69,6 +70,8 @@ typedef struct packed {
 } control_t;
 
 typedef struct packed {
+	u64 pc;
+	u32 raw_instr;
 	word_t srca, srcb;
 	control_t ctl;
 	creg_addr_t dst; 
@@ -76,12 +79,16 @@ typedef struct packed {
 } decode_data_t;
 
 typedef struct packed {
+	u64 pc;
+	u32 raw_instr;
 	control_t ctl;
 	creg_addr_t dst;
 	u64 alu_out; 
 } execute_data_t;
 
 typedef struct packed {
+	u64 pc;
+	u32 raw_instr;
 	control_t ctl;
 	creg_addr_t dst;
 	u64 alu_out;
