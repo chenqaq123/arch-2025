@@ -21,6 +21,9 @@ module core import common::*;(
 );
 	/* TODO: Add your CPU-Core here. */
 
+	memory_data_t dataM, dataM_nxt;
+	u64 write_data;
+
 	// IF阶段
 	u1 stallpc, flush;
 	u64 pcplus4, pc_nxt, IF_pc;
@@ -79,9 +82,9 @@ module core import common::*;(
 		.ra2,
 		.rd1,
 		.rd2,
-		.wvalid(),
-		.wa(),
-		.wd()
+		.wvalid(dataM.ctl.regwrite),
+		.wa(dataM.dst),
+		.wd(write_data)
 	);
 
 	imm_gen imm_gen(
@@ -111,12 +114,27 @@ module core import common::*;(
 	// EX阶段
 	execute_data_t dataE, dataE_nxt;
 	u64 alu_out;
+	u64 ope2;
+
+	rd2_imm_mux rd2_imm_mux(
+		.rd2_from_register(dataD.srcb),
+		.imm_64(dataD.imm_64),
+		.ALUSRC(dataD.ctl.alusrc),
+		.rd2(ope2)
+	);
+
+	alu alu(
+		.rd1(dataD.srca),
+		.rd2(ope2),
+		.ALUOP(dataD.ctl.alufunc),
+		.ALU_out(alu_out)
+	);
 
 	execute execute(
 		.clk, .reset,
 		.dataD,
+		.alu_out,
 		.dataE_nxt(dataE_nxt),
-		.alu_out(alu_out)
 	);
 
 	ex_mem_reg ex_mem_reg(
@@ -126,31 +144,23 @@ module core import common::*;(
 	);
 
 	// MEM阶段
-	memory_data_t dataM, dataM_nxt;
-
-
-
-
-
-
-
-
-
-
-
-
-
 	
-	
-	regfile regfile(
+	mem mem(
 		.clk, .reset,
-		.ra1,
-		.ra2,
-		.rd1,
-		.rd2,
-		.wvalid(),
-		.wa(),
-		.wd()
+		.dataE,
+		.dataM_nxt(dataM_nxt)
+	);
+
+	mem_wb_reg mem_wb_reg(
+		.clk, .reset,
+		.dataM_nxt,
+		.dataM
+	);
+
+	// WB阶段
+	wb_mux wb_mux(
+		.ALU_out(dataM.alu_out),
+		.wd(write_data)
 	);
 
 
