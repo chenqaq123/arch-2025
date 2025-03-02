@@ -25,9 +25,10 @@ module decoder
         f3 = raw_instr[14:12];
         f7_diff = raw_instr[30];
         unique case (opcode):
-            ctl.regwrite = 1;
-            ctl.alusrc = FromImm;
             opcode_I: begin
+                ctl.regwrite = 1;
+                ctl.alusrc = FromImm;
+                ctl.immGenType = Gen;
                 unique case (f3):
                     F3_addi: begin
                         ctl.op = ADDI;
@@ -54,6 +55,7 @@ module decoder
             opcode_R: begin
                 ctl.regwrite = 1;
                 ctl.alusrc = FromReg;
+                ctl.immGenType = NoGen;
                 unique case (f3):
                     F3_add_OR_sub: begin
                         unique case (f7_diff):
@@ -92,6 +94,7 @@ module decoder
             opcode_I_IW: begin
                 ctl.regwrite = 1;
                 ctl.alusrc = FromImm;
+                ctl.immGenType = Gen;
                 unique case (f3):
                     F3_addiw: begin
                         ctl.op = ADDIW;
@@ -106,6 +109,7 @@ module decoder
             opcode_R_W: begin
                 ctl.regwrite = 1;
                 ctl.alusrc = FromReg;
+                ctl.immGenType = NoGen;
                 unique case (f3):
                     F3_addw_OR_subw: begin
                         unique case (f7_diff):
