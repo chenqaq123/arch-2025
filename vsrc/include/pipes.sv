@@ -37,6 +37,10 @@ typedef enum logic [2:0] {
 	NoSrc, FromImm, FromReg
 } ALUSRCType;
 
+typedef enum logic [2:0] {
+	NoGen, Gen
+} ImmGenType;
+
 typedef struct packed {
 	u32 raw_instr;
 } fetch_data_t;
@@ -61,12 +65,14 @@ typedef struct packed {
 	alufunc_t alufunc;
 	u1 regwrite;
 	ALUSRCType alusrc;
+	ImmGenType immGenType;
 } control_t;
 
 typedef struct packed {
 	word_t srca, srcb;
 	control_t ctl;
 	creg_addr_t dst; 
+	u64 imm_64;
 } decode_data_t;
 
 typedef struct packed {

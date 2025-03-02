@@ -59,9 +59,19 @@ module core import common::*;(
 	);
 
 	// ID阶段
+	control_t ctl;
 	decode_data_t dataD, dataD_nxt;
 	creg_addr_t ra1, ra2;
 	u64 rd1, rd2;
+	u64 imm_64;
+
+	assign ra1 = dataF.raw_instr[19:15];
+	assign ra2 = dataF.raw_instr[24:20];
+
+	decoder decoder(
+		.raw_instr(dataF.raw_instr),
+		.ctl(ctl)
+	);
 
 	regfile regfile(
 		.clk, .reset,
@@ -73,14 +83,53 @@ module core import common::*;(
 		.wa(),
 		.wd()
 	);
-	
+
+	imm_gen imm_gen(
+		.raw_instr(dataF.raw_instr),
+		.immGenType(ctl.immGenType),
+		.imm_64
+	);
+
 	decode decode (
 		.clk, .reset,
 		.dataF,
-		.dataD_nxt(dataD_nxt),
+		.ctl,
 
-		.ra1, .ra2, .rd1, .rd2
+		.rd1,
+		.rd2,
+		.imm_64,
+
+		.dataD_nxt(dataD_nxt),
 	);
+
+	id_ex_reg id_ex_reg(
+		.clk, .reset,
+		.dataD_nxt,
+		.dataD
+	);
+
+	// EX阶段
+	execute_data_t dataE, dataE_nxt;
+	u64 alu_out;
+
+	execute execute(
+		.clk, .reset,
+		.dataD,
+		.dataE_nxt(dataE_nxt),
+		.alu_out(alu_out)
+	);
+
+	ex_mem_reg ex_mem_reg(
+		.clk, .reset,
+		.dataE_nxt,
+		.dataE
+	);
+
+	// MEM阶段
+	memory_data_t dataM, dataM_nxt;
+
+
+
 
 
 
