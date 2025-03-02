@@ -76,14 +76,15 @@ typedef struct packed {
 } decode_data_t;
 
 typedef struct packed {
-	// TODO
 	control_t ctl;
+	creg_addr_t dst;
+	u64 alu_out; 
 } execute_data_t;
 
 typedef struct packed {
-	// TODO
 	control_t ctl;
-
+	creg_addr_t dst;
+	u64 alu_out;
 } memory_data_t;
 
 

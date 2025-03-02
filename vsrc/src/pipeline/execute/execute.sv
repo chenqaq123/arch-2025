@@ -12,10 +12,13 @@ module execute
     import common::*;
     import pipes::*;(
     input decode_data_t dataD,
+    input u64 alu_out,
     output execute_data_t dataE_nxt
 );
-	// TODO 
 
+    assign dataE_nxt.alu_out = alu_out;
+    assign dataE_nxt.ctl = dataD.ctl;    
+    assign dataE_nxt.dst = dataD.dst;
 
 endmodule
 

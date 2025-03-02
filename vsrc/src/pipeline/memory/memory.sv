@@ -17,7 +17,10 @@ module memory
     input execute_data_t dataE,
     output memory_data_t dataM_nxt
 );
-    // TODO
+    
+    assign dataM_nxt.ctl = dataE.ctl;
+    assign dataM_nxt.dst = dataE.dst;
+    assign dataM_nxt.alu_out = dataE.alu_out;
 
 
 endmodule
