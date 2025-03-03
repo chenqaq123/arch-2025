@@ -45,6 +45,8 @@ module core
 	memory_data_t dataM, dataM_nxt;
 	u64 write_data;
 
+	logic valid;
+
 	// IF阶段
 	u1 stallpc, flush;
 	u64 pcplus4, pc_nxt, IF_pc;
@@ -58,6 +60,8 @@ module core
 	);
 
 	assign stallpc = ireq.valid && ~iresp.data_ok;
+	assign valid = ~stallpc;
+
 	pc pc(
 		.clk, .reset,
 		.stallpc,
@@ -72,6 +76,7 @@ module core
 	fetch fetch(
 		.pc(IF_pc),
 		.raw_instr(raw_instr),
+		.valid,
 		.dataF_nxt(dataF_nxt)
 	);
 
@@ -187,7 +192,7 @@ module core
 		.clock              (clk),
 		.coreid             (0),
 		.index              (0),
-		.valid              (1'b1),
+		.valid              (dataM.valid),
 		.pc                 (dataM.pc),
 		.instr              (dataM.raw_instr),
 		.skip               (0),

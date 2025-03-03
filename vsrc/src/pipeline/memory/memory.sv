@@ -22,6 +22,7 @@ module memory
     assign dataM_nxt.dst = dataE.dst;
     assign dataM_nxt.alu_out = dataE.alu_out;
 
+    assign dataM_nxt.valid = dataE.valid;
 
 endmodule
 

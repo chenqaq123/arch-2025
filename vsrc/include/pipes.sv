@@ -44,6 +44,7 @@ typedef enum logic [2:0] {
 typedef struct packed {
 	u64 pc;
 	u32 raw_instr;
+	logic valid;
 } fetch_data_t;
 
 typedef enum logic [5:0] { 
@@ -76,6 +77,7 @@ typedef struct packed {
 	control_t ctl;
 	creg_addr_t dst; 
 	u64 imm_64;
+	logic valid;
 } decode_data_t;
 
 typedef struct packed {
@@ -84,6 +86,7 @@ typedef struct packed {
 	control_t ctl;
 	creg_addr_t dst;
 	u64 alu_out; 
+	logic valid;
 } execute_data_t;
 
 typedef struct packed {
@@ -92,6 +95,7 @@ typedef struct packed {
 	control_t ctl;
 	creg_addr_t dst;
 	u64 alu_out;
+	logic valid;
 } memory_data_t;
 
 
