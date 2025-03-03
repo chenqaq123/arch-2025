@@ -13,14 +13,14 @@ module id_ex_reg
     import common::*;
     import pipes::*;(
     input logic clk, reset,
-    input decode_data_t dataD_next,
+    input decode_data_t dataD_nxt,
     output decode_data_t dataD
 );
     always_ff @(posedge clk) begin
         if(reset) begin
             dataD <= '0;
         end else begin
-            dataD <= dataD_next;
+            dataD <= dataD_nxt;
         end
     end
 endmodule

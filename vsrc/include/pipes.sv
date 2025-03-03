@@ -58,7 +58,7 @@ typedef enum logic [4:0] {
 	ALU_UNKNOWN,
 	ALU_ADD, ALU_SUB, ALU_AND, ALU_OR, ALU_XOR, 
 	ALU_ADDW, ALU_SUBW,
-	ALU_ADDIW, 
+	ALU_ADDIW
 } alufunc_t;
 
 typedef struct packed {

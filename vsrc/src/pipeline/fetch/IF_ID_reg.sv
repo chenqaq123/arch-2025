@@ -19,7 +19,7 @@ module if_id_reg
     fetch_data_t dataFReg;
 
     always_ff @(posedge clk) begin
-        if(reset | flush) begin
+        if(reset) begin
             dataFReg <= '0;
         end else begin
             dataFReg <= dataF_nxt;

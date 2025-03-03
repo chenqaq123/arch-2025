@@ -3,15 +3,34 @@
 
 `ifdef VERILATOR
 `include "include/common.sv"
-`include "src/pipeline/regfile/regfile.sv"
+`include "include/pipes.sv"
+
 `include "src/pipeline/fetch/fetch.sv"
-`include "src/pipeline/fetch/IF_ID_reg.sv"
+`include "src/pipeline/fetch/if_id_reg.sv"
 `include "src/pipeline/fetch/pc_mux.sv"
 `include "src/pipeline/fetch/pc.sv"
+
 `include "src/pipeline/decode/decode.sv"
+`include "src/pipeline/decode/decoder.sv"
+`include "src/pipeline/decode/id_ex_reg.sv"
+`include "src/pipeline/decode/imm_gen.sv"
+
+`include "src/pipeline/execute/alu.sv"
+`include "src/pipeline/execute/ex_mem_reg.sv"
+`include "src/pipeline/execute/execute.sv"
+`include "src/pipeline/execute/rd2_imm_mux.sv"
+
+`include "src/pipeline/memory/mem_wb_reg.sv"
+`include "src/pipeline/memory/memory.sv"
+
+`include "src/pipeline/writeback/wb_mux.sv"
+
+`include "src/pipeline/regfile/regfile.sv"
 `endif
 
-module core import common::*;(
+module core 
+	import common::*;
+	import pipes::*;(
 	input  logic       clk, reset,
 	output ibus_req_t  ireq,
 	input  ibus_resp_t iresp,
@@ -20,15 +39,16 @@ module core import common::*;(
 	input  logic       trint, swint, exint
 );
 	/* TODO: Add your CPU-Core here. */
-
+	fetch_data_t dataF, dataF_nxt;
+	decode_data_t dataD, dataD_nxt;
+	execute_data_t dataE, dataE_nxt;
 	memory_data_t dataM, dataM_nxt;
 	u64 write_data;
 
 	// IF阶段
 	u1 stallpc, flush;
 	u64 pcplus4, pc_nxt, IF_pc;
-	u64 raw_instr;
-	fetch_data_t dataF, dataF_nxt;
+	u32 raw_instr;
 
 	assign pcplus4 = IF_pc + 4;
 
@@ -50,7 +70,6 @@ module core import common::*;(
 	assign raw_instr = iresp.data;
 
 	fetch fetch(
-		.clk, .reset,
 		.pc(IF_pc),
 		.raw_instr(raw_instr),
 		.dataF_nxt(dataF_nxt)
@@ -64,7 +83,6 @@ module core import common::*;(
 
 	// ID阶段
 	control_t ctl;
-	decode_data_t dataD, dataD_nxt;
 	creg_addr_t ra1, ra2;
 	u64 rd1, rd2;
 	u64 imm_64;
@@ -103,7 +121,7 @@ module core import common::*;(
 		.rd2,
 		.imm_64,
 
-		.dataD_nxt(dataD_nxt),
+		.dataD_nxt(dataD_nxt)
 	);
 
 	id_ex_reg id_ex_reg(
@@ -113,7 +131,6 @@ module core import common::*;(
 	);
 
 	// EX阶段
-	execute_data_t dataE, dataE_nxt;
 	u64 alu_out;
 	u64 ope2;
 
@@ -132,10 +149,9 @@ module core import common::*;(
 	);
 
 	execute execute(
-		.clk, .reset,
 		.dataD,
 		.alu_out,
-		.dataE_nxt(dataE_nxt),
+		.dataE_nxt(dataE_nxt)
 	);
 
 	ex_mem_reg ex_mem_reg(
@@ -146,8 +162,7 @@ module core import common::*;(
 
 	// MEM阶段
 
-	mem mem(
-		.clk, .reset,
+	memory memory(
 		.dataE,
 		.dataM_nxt(dataM_nxt)
 	);
