@@ -22,6 +22,8 @@ module execute
     assign dataE_nxt.ctl = dataD.ctl;    
     assign dataE_nxt.dst = dataD.dst;
 
+    assign dataE_nxt.valid = dataD.valid;
+
 endmodule
 
 `endif

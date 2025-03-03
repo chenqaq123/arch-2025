@@ -31,7 +31,7 @@ module decode
     assign dataD_nxt.srcb = rd2;
     assign dataD_nxt.imm_64 = imm_64;
 
-
+    assign dataD_nxt.valid = dataF.valid;
 endmodule
 
 
