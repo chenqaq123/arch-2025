@@ -19,17 +19,17 @@ module decoder
     u3 f3;
     logic f7_diff;
 
-    always_comb begin : 
+    always_comb begin
         ctl = '0;
         opcode = raw_instr[6:0];
         f3 = raw_instr[14:12];
         f7_diff = raw_instr[30];
-        unique case (opcode):
+        unique case (opcode)
             opcode_I: begin
                 ctl.regwrite = 1;
                 ctl.alusrc = FromImm;
                 ctl.immGenType = Gen;
-                unique case (f3):
+                unique case (f3)
                     F3_addi: begin
                         ctl.op = ADDI;
                         ctl.alufunc = ALU_ADD;
@@ -56,9 +56,9 @@ module decoder
                 ctl.regwrite = 1;
                 ctl.alusrc = FromReg;
                 ctl.immGenType = NoGen;
-                unique case (f3):
+                unique case (f3)
                     F3_add_OR_sub: begin
-                        unique case (f7_diff):
+                        unique case (f7_diff)
                             1'b0: begin
                                 ctl.op = ADD;
                                 ctl.alufunc = ALU_ADD;
@@ -95,7 +95,7 @@ module decoder
                 ctl.regwrite = 1;
                 ctl.alusrc = FromImm;
                 ctl.immGenType = Gen;
-                unique case (f3):
+                unique case (f3)
                     F3_addiw: begin
                         ctl.op = ADDIW;
                         ctl.alufunc = ALU_ADDIW;
@@ -110,9 +110,9 @@ module decoder
                 ctl.regwrite = 1;
                 ctl.alusrc = FromReg;
                 ctl.immGenType = NoGen;
-                unique case (f3):
+                unique case (f3)
                     F3_addw_OR_subw: begin
-                        unique case (f7_diff):
+                        unique case (f7_diff)
                             1'b0: begin
                                 ctl.op = ADDW;
                                 ctl.alufunc = ALU_ADDW;
@@ -132,6 +132,13 @@ module decoder
                         ctl.alufunc = ALU_UNKNOWN;
                     end
                 endcase
+            end
+            default: begin
+                ctl.regwrite = 0;
+                ctl.alusrc = FromReg;
+                ctl.immGenType = NoGen;
+                ctl.op = UNKNOWN;
+                ctl.alufunc = ALU_UNKNOWN;
             end
 
         endcase

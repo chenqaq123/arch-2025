@@ -13,7 +13,7 @@ module fetch
     import pipes::*;(
     input u64 pc,
     input u32 raw_instr,
-    output fetch_data_t dataF_nxt,
+    output fetch_data_t dataF_nxt
 );
     assign dataF_nxt.pc = pc;
     assign dataF_nxt.raw_instr = raw_instr;

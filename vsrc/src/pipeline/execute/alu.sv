@@ -17,6 +17,7 @@ module alu
 );
 	u64 result;
 	always_comb begin
+		result = '0;  // 添加默认值
 		ALU_out = '0;
 		unique case(ALUOP)
             // ALU_ADD, ALU_SUB, ALU_AND, ALU_OR, ALU_XOR, 

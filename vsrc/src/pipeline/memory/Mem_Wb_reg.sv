@@ -13,14 +13,14 @@ module mem_wb_reg
     import common::*;
     import pipes::*;(
     input logic clk, reset,
-    input memory_data_t dataM_next,
+    input memory_data_t dataM_nxt,
     output memory_data_t dataM
 );
     always_ff @(posedge clk) begin
         if(reset) begin
             dataM <= '0; //valid也会为0
         end else begin
-            dataM <= dataM_next;
+            dataM <= dataM_nxt;
         end
     end
 endmodule

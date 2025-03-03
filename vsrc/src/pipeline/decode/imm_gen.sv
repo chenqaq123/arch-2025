@@ -20,7 +20,7 @@ module imm_gen
             NoGen: begin
                 imm_64 = '0;
             end
-            Gen_1: begin
+            Gen: begin
                 imm_64 = {{52{raw_instr[31]}}, raw_instr[31:20]};
             end
             default: begin
