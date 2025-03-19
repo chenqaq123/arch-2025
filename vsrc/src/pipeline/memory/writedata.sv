@@ -9,7 +9,7 @@
 module writedata
     import common::*; (
     input u64 _wd,
-    input addr,
+    input u3 addr,
     input msize_t msize,
 
     output u64 wd,

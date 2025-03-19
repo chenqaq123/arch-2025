@@ -13,20 +13,21 @@ module if_id_reg
     import common::*;
     import pipes::*;(
     input logic clk, reset,
+    input logic stallpc,
+    input logic if_id_write,
     input fetch_data_t dataF_nxt,
     output fetch_data_t dataF
 );
-    fetch_data_t dataFReg;
-
     always_ff @(posedge clk) begin
         if(reset) begin
-            dataFReg <= '0;
+            dataF <= '0;
+        end else if(if_id_write) begin
+            dataF <= dataF_nxt;
+        end else if () begin 
         end else begin
-            dataFReg <= dataF_nxt;
+            dataF <= dataF;
         end
     end
-
-    assign dataF = dataFReg;
 
 endmodule
 
