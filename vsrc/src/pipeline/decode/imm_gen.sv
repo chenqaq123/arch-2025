@@ -23,6 +23,22 @@ module imm_gen
             Gen_1: begin
                 imm_64 = {{52{raw_instr[31]}}, raw_instr[31:20]};
             end
+            // lui
+            Gen_2: begin
+                imm_32 = {{raw_instr[31:12]}, {12{'0}}};
+                imm_64 = {{32{imm_32[31]}}, imm_32[31:0]};
+            end
+            Gen_3: begin
+                // TODO
+            end
+            // sd
+            Gen_4: begin
+                imm_12 = {{raw_instr[31:25]}, {raw_instr[11:7]}};
+                imm_64 = {{52{imm_12[11]}}, imm_12[11:0]};
+            end
+            Gen_5: begin
+                // TODO
+            end
             default: begin
                 imm_64 = '0;
             end
