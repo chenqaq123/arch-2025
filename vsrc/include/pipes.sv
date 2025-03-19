@@ -31,6 +31,26 @@ parameter opcode_R_W = 7'b0111011;
 		parameter F7_addw = 7'b0000000;
 		parameter F7_subw = 7'b0100000;
 
+// load指令
+parameter opcode_I_load = 7'b0000011;
+	parameter F3_lb = 3'b000;
+	parameter F3_lh = 3'b001;
+	parameter F3_lw = 3'b010;
+	parameter F3_ld = 3'b011;
+	parameter F3_lbu = 3'b100;
+	parameter F3_lhu = 3'b101;
+	parameter F3_lwu = 3'b110;
+
+// store指令
+parameter opcode_S = 7'b0100011;
+	parameter F3_sb = 3'b000;
+	parameter F3_sh = 3'b001;
+	parameter F3_sw = 3'b010;
+	parameter F3_sd = 3'b011;
+
+// lui指令
+parameter opcode_U_lui = 7'b0110111;
+
 /* Define pipeline structures here */
 
 typedef enum logic [2:0] {
@@ -62,12 +82,25 @@ typedef enum logic [4:0] {
 	ALU_ADDIW
 } alufunc_t;
 
+// 访存大小
+typedef enum logic [2:0] {
+	MSize_zero, MSize_8bits, MSize_16bits, MSize_32bits, MSize_64bits
+} MemSizeType;
+
 typedef struct packed {
 	decode_op_t op;
-	alufunc_t alufunc;
-	u1 regwrite;
+	// ID阶段
 	ALUSRCType alusrc;
 	ImmGenType immGenType;
+	// Mem阶段
+	u1 MemRead;
+	u1 MemWrite;
+	MemSizeType MemSize;
+	// EX阶段
+	alufunc_t alufunc;
+	// WB阶段
+	u1 regwrite;
+	u1 MemToReg;
 } control_t;
 
 typedef struct packed {

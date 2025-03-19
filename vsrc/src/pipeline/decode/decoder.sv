@@ -29,6 +29,10 @@ module decoder
                 ctl.regwrite = 1;
                 ctl.alusrc = FromImm;
                 ctl.immGenType = Gen;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.MemToReg = 0;
                 unique case (f3)
                     F3_addi: begin
                         ctl.op = ADDI;
@@ -56,6 +60,10 @@ module decoder
                 ctl.regwrite = 1;
                 ctl.alusrc = FromReg;
                 ctl.immGenType = NoGen;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.MemToReg = 0;
                 unique case (f3)
                     F3_add_OR_sub: begin
                         unique case (f7_diff)
@@ -95,6 +103,10 @@ module decoder
                 ctl.regwrite = 1;
                 ctl.alusrc = FromImm;
                 ctl.immGenType = Gen;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.MemToReg = 0;
                 unique case (f3)
                     F3_addiw: begin
                         ctl.op = ADDIW;
@@ -110,6 +122,10 @@ module decoder
                 ctl.regwrite = 1;
                 ctl.alusrc = FromReg;
                 ctl.immGenType = NoGen;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.MemToReg = 0;
                 unique case (f3)
                     F3_addw_OR_subw: begin
                         unique case (f7_diff)
@@ -133,12 +149,19 @@ module decoder
                     end
                 endcase
             end
+            // opcode_I_load: begin
+
+            // end
             default: begin
                 ctl.regwrite = 0;
                 ctl.alusrc = FromReg;
                 ctl.immGenType = NoGen;
                 ctl.op = UNKNOWN;
                 ctl.alufunc = ALU_UNKNOWN;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.MemToReg = 0;
             end
 
         endcase
