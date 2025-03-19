@@ -192,6 +192,8 @@ module core
 	// WB阶段
 	wb_mux wb_mux(
 		.ALU_out(dataM.alu_out),
+		.MemReadData(dataM.MemReadData),
+		.MemToReg(dataM.ctl.MemToReg),
 		.wd(write_data)
 	);
 

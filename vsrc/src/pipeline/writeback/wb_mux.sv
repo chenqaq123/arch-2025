@@ -12,9 +12,11 @@ module wb_mux
     import common::*;
     import pipes::*;(
     input u64 ALU_out,
+    input u64 MemReadData,
+    input logic MemToReg,
     output u64 wd 
 );
-    assign wd = ALU_out;
+    assign wd = MemToReg ? MemReadData : ALU_out;
 endmodule
 
 `endif

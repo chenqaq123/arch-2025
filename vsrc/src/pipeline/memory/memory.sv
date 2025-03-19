@@ -103,6 +103,7 @@ module memory
     assign dataM_nxt.alu_out = dataE.alu_out;
 
     assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.alufunc != ALU_UNKNOWN);
+    assign dataM_nxt.MemReadData = rd;
 
     // TODO
     assign stallM = dreq.valid && ~dresp.data_ok;
