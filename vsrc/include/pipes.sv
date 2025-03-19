@@ -127,6 +127,7 @@ typedef struct packed {
 	creg_addr_t dst;
 	u64 alu_out; 
 	logic valid;
+	u64 MemWriteData;
 } execute_data_t;
 
 typedef struct packed {

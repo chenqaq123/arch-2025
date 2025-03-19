@@ -24,6 +24,8 @@ module execute
 
     assign dataE_nxt.valid = dataD.valid;
 
+    assign dataE_nxt.MemWriteData = dataD.srcb;
+
 endmodule
 
 `endif
