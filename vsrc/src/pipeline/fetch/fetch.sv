@@ -17,9 +17,15 @@ module fetch
     output fetch_data_t dataF_nxt
 );  
 
-    assign dataF_nxt.valid = valid;
-    assign dataF_nxt.pc = pc;
-    assign dataF_nxt.raw_instr = raw_instr;
+    always_comb begin
+        dataF_nxt.valid = valid;
+        dataF_nxt.raw_instr = raw_instr;
+        if(valid) begin
+            dataF_nxt.pc = pc;
+        end else begin
+            dataF_nxt.pc = dataF_nxt.pc;
+        end
+    end
 
 endmodule
 

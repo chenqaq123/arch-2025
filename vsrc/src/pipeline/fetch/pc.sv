@@ -12,7 +12,7 @@ module pc
     import common::*;
     import pipes::*;(
     input logic reset, clk,
-    input logic stallpc,
+    input logic pc_write,
 
     input u64 pc_nxt,
     output u64 pc
@@ -20,10 +20,10 @@ module pc
     always_ff @( posedge clk ) begin
         if(reset) begin
             pc <= 64'h8000_0000;
-        end else if(stallpc) begin
-            pc <= pc;
-        end else begin
+        end else if(pc_write) begin
             pc <= pc_nxt;
+        end else begin
+            pc <= pc;
         end
     end
 endmodule

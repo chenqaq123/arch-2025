@@ -15,10 +15,10 @@ module memory
 	import common::*;
 	import pipes::*;(
     input execute_data_t dataE,
-    input dbus_req_t dreq,
+    output dbus_req_t dreq,
 
     output logic stallM,
-    output dbus_resp_t dresp,
+    input dbus_resp_t dresp,
     output memory_data_t dataM_nxt
 );
 
@@ -29,67 +29,51 @@ module memory
     u64 _rd;
     u64 rd;
 
-    always_comb begin :  
-        unique case (dataE.ctl.MemSize)
-            MSize_zero: begin
-            end
-            MSize_8bits: begin
-                msize = MSIZE1;
-            end
-            MSize_16bits: begin
-                msize = MSIZE2;
-            end
-            MSize_32bits: begin
-                msize = MSIZE4;
-            end
-            MSize_64bits: begin
-                msize = MSIZE8;
-            end
-            default: begin
-            end
-        endcase 
-        unique case (dataE.ctl.wbType) 
-            WBNoHandle: begin
-                mem_unsigned = '1;
-            end
-            WB_7: begin //lbu
-                mem_unsigned = '1;
-            end
-            WB_15: begin //lhu
-                mem_unsigned = '1;
-            end
-            WB_31: begin //lwu
-                mem_unsigned = '1;
-            end
-            WB_63: begin //ld
-                mem_unsigned = '0;
-            end
-            WB_7_sext: begin //lb
-                mem_unsigned = '0;
-            end
-            WB_15_sext: begin //lh
-                mem_unsigned = '0;
-            end
-            WB_31_sext: begin //lw
-                mem_unsigned = '0;
-            end
-            default: begin
-                mem_unsigned = '1;
-            end
-        endcase
+    // 先计算 msize
+    always_comb begin
+        msize = MSIZE1;  // 默认值
+        if (dataE.ctl.MemWrite || dataE.ctl.MemRead) begin
+            unique case (dataE.ctl.MemSize)
+                MSize_zero: msize = MSIZE1;
+                MSize_8bits: msize = MSIZE1;
+                MSize_16bits: msize = MSIZE2;
+                MSize_32bits: msize = MSIZE4;
+                MSize_64bits: msize = MSIZE8;
+                default: msize = MSIZE1;
+            endcase
+        end
+    end
 
+    // 分离 mem_unsigned 的计算
+    always_comb begin
+        mem_unsigned = '1;  // 默认值
+        unique case (dataE.ctl.wbType)
+            WBNoHandle, WB_7, WB_15, WB_31: mem_unsigned = '1;
+            WB_63, WB_7_sext, WB_15_sext, WB_31_sext: mem_unsigned = '0;
+            default: mem_unsigned = '1;
+        endcase
+    end
+
+    // 分离 dreq 和 _rd 的计算
+    always_comb begin
+        // 默认值
         dreq.valid = 1'b0;
+        dreq.addr = '0;
+        dreq.size = msize;
+        dreq.strobe = '0;
+        dreq.data = '0;
+        _rd = '0;
+
         if (dataE.ctl.MemWrite) begin
             dreq.valid = 1'b1;
             dreq.addr = dataE.alu_out;
             dreq.size = msize;
             dreq.strobe = strobe;
             dreq.data = wd;
-        end
-        if (dataE.ctl.MemRead) begin
+        end else if (dataE.ctl.MemRead) begin
             dreq.valid = 1'b1;
             dreq.addr = dataE.alu_out;
-            dreq.size = dataE.msize;
+            dreq.size = msize;
             dreq.strobe = '0;
             _rd = dresp.data;
         end
@@ -118,10 +102,10 @@ module memory
     assign dataM_nxt.dst = dataE.dst;
     assign dataM_nxt.alu_out = dataE.alu_out;
 
-    assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.ALUOP != ALU_UNKNOW);
+    assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.alufunc != ALU_UNKNOWN);
 
-    assign stallM = dreq.valid && ~dresp.data_ok;
     // TODO
+    assign stallM = dreq.valid && ~dresp.data_ok;
 
 endmodule
 

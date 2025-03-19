@@ -44,13 +44,15 @@ module core
 	execute_data_t dataE, dataE_nxt;
 	memory_data_t dataM, dataM_nxt;
 	u64 write_data;
-
+	logic stallM;
 	logic valid;
+	logic if_id_write;
 
 	// IF阶段
 	u1 stallpc, flush;
 	u64 pcplus4, pc_nxt, IF_pc;
 	u32 raw_instr;
+	logic pc_write;
 
 	assign pcplus4 = IF_pc + 4;
 
@@ -60,11 +62,13 @@ module core
 	);
 
 	assign stallpc = ireq.valid && ~iresp.data_ok;
-	assign valid = ~stallpc;
+	assign if_id_write = ~stallpc & ~stallM;
+	assign pc_write = ~stallpc & ~stallM;
+	assign valid = if_id_write;
 
 	pc pc(
 		.clk, .reset,
-		.stallpc,
+		.pc_write,
 		.pc_nxt,
 		.pc(IF_pc)
 	);
@@ -82,6 +86,8 @@ module core
 
 	if_id_reg if_id_reg(
 		.clk, .reset,
+		.stallpc,
+		.if_id_write,
 		.dataF_nxt,
 		.dataF
 	);
@@ -131,6 +137,7 @@ module core
 
 	id_ex_reg id_ex_reg(
 		.clk, .reset,
+		.stall(stallM),
 		.dataD_nxt,
 		.dataD
 	);
@@ -161,14 +168,17 @@ module core
 
 	ex_mem_reg ex_mem_reg(
 		.clk, .reset,
+		.stall(stallM),
 		.dataE_nxt,
 		.dataE
 	);
 
 	// MEM阶段
-
 	memory memory(
 		.dataE,
+		.dreq(dreq),
+		.stallM(stallM),
+		.dresp(dresp),
 		.dataM_nxt(dataM_nxt)
 	);
 

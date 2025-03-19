@@ -14,8 +14,18 @@ module imm_gen
     input ImmGenType immGenType,
     output u64 imm_64
 );
+    logic[31:0] imm_32;
+    logic[12:0] imm_13;
+    logic[11:0] imm_12;
+    logic[20:0] imm_21;
     always_comb begin
+        // 为所有中间变量添加默认值
         imm_64 = '0;
+        imm_32 = '0;
+        imm_13 = '0;
+        imm_12 = '0;
+        imm_21 = '0;
+
         unique case (immGenType)
             NoGen: begin
                 imm_64 = '0;
