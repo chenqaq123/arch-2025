@@ -49,6 +49,9 @@ module alu
 				result = rd1 + rd2;
 				ALU_out = {{32{result[31]}}, result[31:0]};
 			end
+			ALU_LINK: begin
+				ALU_out = rd2;
+			end
 			default: begin
 				ALU_out = '0;
 			end
