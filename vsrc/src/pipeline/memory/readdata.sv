@@ -32,6 +32,10 @@ module readdata
                         sign_bit = mem_unsigned ? 1'b0 : _rd[15];
                         rd = {{56{sign_bit}}, _rd[15-:8]};
                     end
+					3'b010: begin
+						sign_bit = mem_unsigned ? 1'b0 : _rd[23];
+						rd = {{56{sign_bit}}, _rd[23-:8]};
+					end
                     3'b011: begin
 						sign_bit = mem_unsigned ? 1'b0 : _rd[31];
 						rd = {{56{sign_bit}}, _rd[31-:8]};
