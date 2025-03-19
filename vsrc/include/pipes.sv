@@ -137,6 +137,7 @@ typedef struct packed {
 	creg_addr_t dst;
 	u64 alu_out;
 	logic valid;
+	u64 MemReadData;	// 从memory中读取的数据
 } memory_data_t;
 
 
