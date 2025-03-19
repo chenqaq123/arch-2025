@@ -58,7 +58,7 @@ typedef enum logic [2:0] {
 } ALUSRCType;
 
 typedef enum logic [2:0] {
-	NoGen, Gen
+	NoGen, Gen_1, Gen_2, Gen_3, Gen_4, Gen_5 
 } ImmGenType;
 
 typedef struct packed {
@@ -67,19 +67,20 @@ typedef struct packed {
 	logic valid;
 } fetch_data_t;
 
-typedef enum logic [5:0] { 
-	UNKNOWN,
-	ADDI, XORI, ORI, ANDI,
-	ADD, SUB, XOR, OR, AND,
-	ADDW, SUBW,
-	ADDIW
-} decode_op_t; 
+// typedef enum logic [5:0] { 
+// 	UNKNOWN,
+// 	ADDI, XORI, ORI, ANDI,
+// 	ADD, SUB, XOR, OR, AND,
+// 	ADDW, SUBW,
+// 	ADDIW
+// } decode_op_t; 
 
 typedef enum logic [4:0] {
 	ALU_UNKNOWN,
 	ALU_ADD, ALU_SUB, ALU_AND, ALU_OR, ALU_XOR, 
 	ALU_ADDW, ALU_SUBW,
-	ALU_ADDIW
+	ALU_ADDIW,
+	ALU_LINK
 } alufunc_t;
 
 // 访存大小
@@ -87,8 +88,13 @@ typedef enum logic [2:0] {
 	MSize_zero, MSize_8bits, MSize_16bits, MSize_32bits, MSize_64bits
 } MemSizeType;
 
+//write back的数据截断、拓展的类型，WB_7_sext代表先截断再拓展
+typedef enum logic [3:0] {
+	WBNoHandle, WB_7, WB_15, WB_31, WB_63, WB_7_sext, WB_15_sext, WB_31_sext
+} WBType;
+
 typedef struct packed {
-	decode_op_t op;
+	// decode_op_t op;
 	// ID阶段
 	ALUSRCType alusrc;
 	ImmGenType immGenType;
@@ -101,6 +107,7 @@ typedef struct packed {
 	// WB阶段
 	u1 regwrite;
 	u1 MemToReg;
+	WBType wbType;
 } control_t;
 
 typedef struct packed {
