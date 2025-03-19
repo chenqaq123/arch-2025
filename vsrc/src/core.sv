@@ -6,17 +6,17 @@
 `include "include/pipes.sv"
 
 `include "src/pipeline/fetch/fetch.sv"
-`include "src/pipeline/fetch/if_id_reg.sv"
+`include "src/pipeline/fetch/IF_ID_reg.sv"
 `include "src/pipeline/fetch/pc_mux.sv"
 `include "src/pipeline/fetch/pc.sv"
 
 `include "src/pipeline/decode/decode.sv"
 `include "src/pipeline/decode/decoder.sv"
-`include "src/pipeline/decode/id_ex_reg.sv"
+`include "src/pipeline/decode/ID_EX_reg.sv"
 `include "src/pipeline/decode/imm_gen.sv"
 
 `include "src/pipeline/execute/alu.sv"
-`include "src/pipeline/execute/ex_mem_reg.sv"
+`include "src/pipeline/execute/EX_MEM_reg.sv"
 `include "src/pipeline/execute/execute.sv"
 `include "src/pipeline/execute/rd2_imm_mux.sv"
 
@@ -87,6 +87,7 @@ module core
 	if_id_reg if_id_reg(
 		.clk, .reset,
 		.stallpc,
+		.stallM,
 		.if_id_write,
 		.dataF_nxt,
 		.dataF
