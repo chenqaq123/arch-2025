@@ -190,6 +190,7 @@ typedef struct packed {
 	u64 alu_out;
 	logic valid;
 	u64 MemReadData;	// 从memory中读取的数据
+	logic skip;
 } memory_data_t;
 
 

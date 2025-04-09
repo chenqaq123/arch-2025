@@ -208,7 +208,7 @@ module core
 		.valid              (dataM.valid),
 		.pc                 (dataM.pc),
 		.instr              (dataM.raw_instr),
-		.skip               (0),
+		.skip               (dataM.skip),
 		.isRVC              (0),
 		.scFailed           (0),
 		.wen                (dataM.ctl.regwrite),
