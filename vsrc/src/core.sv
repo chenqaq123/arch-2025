@@ -29,6 +29,7 @@
 `include "src/pipeline/regfile/regfile.sv"
 
 `include "src/pipeline/unit/forwarding_unit.sv"
+`include "src/pipeline/unit/hazard_detection_unit.sv"
 `include "src/pipeline/unit/rd_forwarding_mux.sv"
 `endif
 
@@ -51,11 +52,14 @@ module core
 	logic stallM;
 	logic valid;
 	logic if_id_write;
-	branch_data_t branch_ctl;
 	u64 pc_add_imm_mem;
 	u64 pc_jalr_mem;
 	forwarding_control forwardingA, forwardingB;
 	forwarding_control forwardingAA, forwardingBB;
+
+	// TODO 处理两个结构体
+	branch_data_t branch_ctl;
+	hazard_control_t hazard_ctl;
 
 	// IF阶段
 	u1 stallpc, flush;
@@ -110,13 +114,27 @@ module core
 	creg_addr_t ra1, ra2;
 	u64 rd1, rd2;
 	u64 imm_64;
+	reg_use_type regUseType;
 
 	assign ra1 = dataF.raw_instr[19:15];
 	assign ra2 = dataF.raw_instr[24:20];
 
 	decoder decoder(
 		.raw_instr(dataF.raw_instr),
+		.regUseType(regUseType),
 		.ctl(ctl)
+	);
+
+	hazard_detection_unit hazard_detection_unit(
+		.regUseType(regUseType),      
+
+		// load指令检测相关信号
+		.ID_EX_MemRead(dataD.ctl.MemRead),          
+		.ID_EX_rw(dataD.dst),         
+		.ID_rs1(ra1),           
+		.ID_rs2(ra2),           
+		// 输出的冒险控制信号
+		.hazard_ctl(hazard_ctl)
 	);
 
 	regfile regfile(
