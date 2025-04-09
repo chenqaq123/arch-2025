@@ -28,6 +28,7 @@ module memory
     u64 wd;
     u64 _rd;
     u64 rd;
+    logic skip;
 
     // 先计算 msize
     always_comb begin
@@ -77,6 +78,7 @@ module memory
             dreq.strobe = '0;
             _rd = dresp.data;
         end
+        skip = dreq.valid && !(dreq.addr[31]);
     end
 
     readdata readdata(
@@ -104,6 +106,7 @@ module memory
 
     assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.alufunc != ALU_UNKNOWN);
     assign dataM_nxt.MemReadData = rd;
+    assign dataM_nxt.skip = skip;
 
     // TODO
     assign stallM = dreq.valid && ~dresp.data_ok;
