@@ -13,12 +13,13 @@ module id_ex_reg
     import common::*;
     import pipes::*;(
     input logic clk, reset,
+    input logic flush,
     input logic stall,
     input decode_data_t dataD_nxt,
     output decode_data_t dataD
 );
     always_ff @(posedge clk) begin
-        if(reset) begin
+        if(reset | flush) begin
             dataD <= '0;
         end else if(stall) begin
             dataD <= dataD;

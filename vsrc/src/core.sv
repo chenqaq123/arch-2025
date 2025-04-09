@@ -10,6 +10,7 @@
 `include "src/pipeline/fetch/pc_mux.sv"
 `include "src/pipeline/fetch/pc.sv"
 
+`include "src/pipeline/decode/ctl_mux.sv"
 `include "src/pipeline/decode/decode.sv"
 `include "src/pipeline/decode/decoder.sv"
 `include "src/pipeline/decode/ID_EX_reg.sv"
@@ -49,7 +50,6 @@ module core
 	execute_data_t dataE, dataE_nxt;
 	memory_data_t dataM, dataM_nxt;
 	u64 write_data;
-	logic stallM;
 	logic valid;
 	logic if_id_write;
 	u64 pc_add_imm_mem;
@@ -60,6 +60,7 @@ module core
 	// TODO 处理两个结构体
 	branch_data_t branch_ctl;
 	hazard_control_t hazard_ctl;
+	logic stallM, flushM;
 
 	// IF阶段
 	u1 stallpc, flush;
@@ -78,13 +79,17 @@ module core
 	);
 
 	assign stallpc = ireq.valid && ~iresp.data_ok;
-	assign if_id_write = ~stallpc & ~stallM;
-	assign pc_write = ~stallpc & ~stallM;
-	assign valid = if_id_write;
+	// assign if_id_write = ~stallpc & ~stallM;
+	assign valid = hazard_ctl.IF_ID_Write & ~stallM;
+
+	assign pc_write = hazard_ctl.PCWrite & ~stallpc & ~stallM;
+	logic pc_store;
+	assign pc_store = branch_ctl.flush;
 
 	pc pc(
 		.clk, .reset,
 		.pc_write,
+		.pc_store,
 		.pc_nxt,
 		.pc(IF_pc)
 	);
@@ -102,15 +107,16 @@ module core
 
 	if_id_reg if_id_reg(
 		.clk, .reset,
+		.branch_ctl_flush(branch_ctl.flush),
 		.stallpc,
 		.stallM,
-		.if_id_write,
+		.if_id_write(hazard_ctl.IF_ID_Write),
 		.dataF_nxt,
 		.dataF
 	);
 
 	// ID阶段
-	control_t ctl;
+	control_t ctl_nxt, ctl;
 	creg_addr_t ra1, ra2;
 	u64 rd1, rd2;
 	u64 imm_64;
@@ -122,6 +128,12 @@ module core
 	decoder decoder(
 		.raw_instr(dataF.raw_instr),
 		.regUseType(regUseType),
+		.ctl(ctl_nxt)
+	);
+
+	ctl_mux ctl_mux(
+		.ctl_nxt(ctl_nxt),
+		.stall_control_sign(hazard_ctl.stall_control_sign),
 		.ctl(ctl)
 	);
 
@@ -165,6 +177,7 @@ module core
 		.wb_data(write_data),
 		.forwardingAA,
 		.forwardingBB,
+		.stall(hazard_ctl.stall_control_sign),
 
 		.dataD_nxt(dataD_nxt)
 	);
@@ -172,6 +185,7 @@ module core
 	id_ex_reg id_ex_reg(
 		.clk, .reset,
 		.stall(stallM),
+		.flush(branch_ctl.flush),
 		.dataD_nxt,
 		.dataD
 	);
@@ -248,6 +262,7 @@ module core
 
 	ex_mem_reg ex_mem_reg(
 		.clk, .reset,
+		.flush(branch_ctl.flush),
 		.stall(stallM),
 		.dataE_nxt,
 		.dataE
