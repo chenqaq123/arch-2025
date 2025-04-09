@@ -12,6 +12,7 @@ module decoder
     import common::*;
     import pipes::*;(
     input u32 raw_instr,
+    output reg_use_type regUseType,
     output control_t ctl
 );
 
@@ -21,11 +22,13 @@ module decoder
 
     always_comb begin
         ctl = '0;
+        regUseType = NO_RS1_RS2;
         opcode = raw_instr[6:0];
         f3 = raw_instr[14:12];
         f7_diff = raw_instr[30];
         unique case (opcode)
             opcode_I: begin
+                regUseType = ONLY_RS1;
                 ctl.regwrite = 1;
                 ctl.MemRead = 0;
                 ctl.MemWrite = 0;
@@ -101,6 +104,7 @@ module decoder
                 endcase
             end
             opcode_R: begin
+                regUseType = BOTH_RS1_RS2;
                 ctl.regwrite = 1;
                 ctl.alusrc = FromReg;
                 ctl.immGenType = NoGen;
@@ -168,6 +172,7 @@ module decoder
                 endcase
             end
             opcode_I_IW: begin
+                regUseType = ONLY_RS1;
                 ctl.regwrite = 1;
                 ctl.MemRead = 0;
                 ctl.MemWrite = 0;
@@ -219,6 +224,7 @@ module decoder
                 endcase
             end
             opcode_R_W: begin
+                regUseType = BOTH_RS1_RS2;
                 ctl.regwrite = 1;
                 ctl.alusrc = FromReg;
                 ctl.immGenType = NoGen;
@@ -268,6 +274,7 @@ module decoder
                 endcase
             end
             opcode_I_load: begin
+                regUseType = ONLY_RS1;
                 ctl.alusrc = FromImm;
                 ctl.immGenType = Gen_1;
                 ctl.MemRead = 1;
@@ -311,6 +318,7 @@ module decoder
                 endcase
             end
             opcode_S: begin
+                regUseType = BOTH_RS1_RS2;
                 ctl.alusrc = FromImm;
                 ctl.immGenType = Gen_4;
                 ctl.MemRead = 0;
@@ -339,6 +347,7 @@ module decoder
                 endcase
             end
             opcode_B: begin
+                regUseType = BOTH_RS1_RS2;
                 ctl.regwrite = 0;
                 ctl.alusrc = FromReg;
                 ctl.immGenType = Gen_3;
@@ -373,6 +382,7 @@ module decoder
                 endcase
             end
             opcode_U_lui: begin
+                regUseType = NO_RS1_RS2;
                 ctl.alusrc = FromImm;
                 ctl.immGenType = Gen_2;
                 ctl.MemRead = 0;
@@ -385,6 +395,7 @@ module decoder
                 ctl.branchType = NoBranch;
             end
             opcode_U_auipc: begin
+                regUseType = NO_RS1_RS2;
                 ctl.regwrite = 1;
                 ctl.MemToReg = 0;
                 ctl.MemRead = 0;
@@ -397,6 +408,7 @@ module decoder
                 ctl.wbType = WBNoHandle;
             end
             opcode_J_jal: begin
+                regUseType = NO_RS1_RS2;
                 ctl.regwrite = 1;
                 ctl.MemToReg = 0;
                 ctl.MemRead = 0;
@@ -409,6 +421,7 @@ module decoder
                 ctl.wbType = WBNoHandle;
             end
             opcode_J_jalr: begin
+                regUseType = ONLY_RS1;
                 ctl.regwrite = 1;
                 ctl.MemToReg = 0;
                 ctl.MemRead = 0;
