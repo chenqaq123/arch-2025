@@ -180,6 +180,8 @@ typedef struct packed {
 	u64 alu_out; 
 	logic valid;
 	u64 MemWriteData;
+	u64 rd1;
+	u64 rd2;
 } execute_data_t;
 
 typedef struct packed {
