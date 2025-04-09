@@ -27,6 +27,9 @@
 `include "src/pipeline/writeback/wb_mux.sv"
 
 `include "src/pipeline/regfile/regfile.sv"
+
+`include "src/pipeline/unit/forwarding_unit.sv"
+`include "src/pipeline/unit/rd_forwarding_mux.sv"
 `endif
 
 module core 
@@ -51,6 +54,8 @@ module core
 	branch_data_t branch_ctl;
 	u64 pc_add_imm_mem;
 	u64 pc_jalr_mem;
+	forwarding_control forwardingA, forwardingB;
+	forwarding_control forwardingAA, forwardingBB;
 
 	// IF阶段
 	u1 stallpc, flush;
@@ -135,10 +140,13 @@ module core
 		.clk, .reset,
 		.dataF,
 		.ctl,
+		.imm_64,
 
 		.rd1,
 		.rd2,
-		.imm_64,
+		.wb_data(write_data),
+		.forwardingAA,
+		.forwardingBB,
 
 		.dataD_nxt(dataD_nxt)
 	);
@@ -152,24 +160,63 @@ module core
 
 	// EX阶段
 	u64 alu_out;
-	u64 ope2;
 	u64 pc_add_4_ex;
 	u64 pc_add_imm_ex;
 	assign pc_add_4_ex = dataD.pc + 4;
 	assign pc_add_imm_ex = dataD.pc + dataD.imm_64;
+
+	forwarding_unit forwarding_unit(
+		.EX_MEM_rw(dataE.dst),   // EX/MEM 阶段的写寄存器地址
+		.MEM_WB_rw(dataM.dst),   // MEM/WB 阶段的写寄存器地址
+		.ID_EX_rs1(dataD.rs1),   // ID/EX 阶段的源寄存器1地址
+		.ID_EX_rs2(dataD.rs2),   // ID/EX 阶段的源寄存器2地址
+		.ID_rs1(ra1),      // ID 阶段的源寄存器1地址
+		.ID_rs2(ra2),      // ID 阶段的源寄存器2地址
+
+		// 控制信号
+		.EX_MEM_valid(dataE.valid),      // EX/MEM 阶段指令是否有效
+		.MEM_WB_valid(dataM.valid),      // MEM/WB 阶段指令是否有效
+		.EX_MEM_RegWrite(dataE.ctl.regwrite),      // EX/MEM 阶段是否写寄存器
+		.MEM_WB_RegWrite(dataM.ctl.regwrite),      // MEM/WB 阶段是否写寄存器
+
+		.forwardingA(forwardingA),   // 源操作数1的转发控制
+		.forwardingB(forwardingB),   // 源操作数2的转发控制
+		.forwardingAA(forwardingAA),  // ID阶段源操作数1的转发控制
+		.forwardingBB(forwardingBB)  // ID阶段源操作数2的转发控制
+	);
+
+	u64 rd2_from_register;
+	u64 EX_rd1, EX_rd2;
+
+	rd_forwarding_mux rd1_forwarding_mux(
+		.ID_rd(dataD.srca),
+		.WB(write_data),
+		.ALU_out(dataE.alu_out),
+    	.forwarding(forwardingA),
+    	.rd(EX_rd1)
+	);
+
+	rd_forwarding_mux rd2_forwarding_mux(
+		.ID_rd(dataD.srcb),
+		.WB(write_data),
+		.ALU_out(dataE.alu_out),
+    	.forwarding(forwardingB),
+    	.rd(rd2_from_register)
+	);
+
 	rd2_imm_mux rd2_imm_mux(
-		.rd2_from_register(dataD.srcb),
+		.rd2_from_register(rd2_from_register),
 		.imm_64(dataD.imm_64),
 		.pc_add_4(pc_add_4_ex),
 		.pc_add_imm(pc_add_imm_ex),
 		.shamt(dataD.raw_instr[25:20]),
 		.ALUSRC(dataD.ctl.alusrc),
-		.rd2(ope2)
+		.rd2(EX_rd2)
 	);
 
 	alu alu(
 		.rd1(dataD.srca),
-		.rd2(ope2),
+		.rd2(EX_rd2),
 		.ALUOP(dataD.ctl.alufunc),
 		.ALU_out(alu_out)
 	);
@@ -177,7 +224,7 @@ module core
 	execute execute(
 		.dataD,
 		.alu_out,
-		.ope2,
+		.ope2(EX_rd2),
 		.dataE_nxt(dataE_nxt)
 	);
 
@@ -189,7 +236,6 @@ module core
 	);
 
 	// MEM阶段
-	// TODO 
 	assign pc_add_imm_mem = dataE.pc + dataE.imm_64;
 	assign pc_jalr_mem = (dataE.rd1 + dataE.imm_64) & ~1;
 	branch_checker branch_checker(

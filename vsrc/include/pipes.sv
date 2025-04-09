@@ -165,6 +165,8 @@ typedef struct packed {
 typedef struct packed {
 	u64 pc;
 	u32 raw_instr;
+	creg_addr_t rs1;
+	creg_addr_t rs2;
 	word_t srca, srcb;
 	control_t ctl;
 	creg_addr_t dst; 
@@ -204,6 +206,25 @@ typedef struct packed {
 	logic flush;
 	PCSelectType pcSelect;
 } branch_data_t;
+
+typedef struct packed {
+    logic PCWrite;           // PC是否更新，0表示暂停PC
+    logic IF_ID_Write;       // IF/ID流水线寄存器是否写入，0表示插入气泡
+    logic stall_control_sign;// 控制信号是否有效，0表示插入NOP指令
+} hazard_control_t;
+
+typedef enum logic [1:0] {
+    NO_FORWARDING,      // 不需要转发，使用原始数据
+    FROM_ID_EX_ID,      // 数据来自ID/EX流水线寄存器或寄存器堆
+    FROM_WB,            // 数据来自写回阶段（WB），即前两条指令的结果
+    FROM_ALU_OUT        // 数据来自ALU输出，即前一条指令的结果
+} forwarding_control;
+
+typedef enum logic [1:0] {
+    NO_RS1_RS2,    // 不使用任何源寄存器
+    ONLY_RS1,      // 只使用rs1源寄存器
+    BOTH_RS1_RS2   // 同时使用rs1和rs2源寄存器
+} reg_use_type;
 
 endpackage
 
