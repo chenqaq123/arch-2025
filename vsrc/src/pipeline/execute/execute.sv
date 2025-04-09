@@ -29,6 +29,7 @@ module execute
 
     assign dataE_nxt.rd1 = dataD.srca;
     assign dataE_nxt.rd2 = ope2;
+    assign dataE_nxt.imm_64 = dataD.imm_64;
 
 endmodule
 

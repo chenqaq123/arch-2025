@@ -2,8 +2,8 @@
 `define __BRANCH_CHECKER_SV
 
 `ifdef VERILATOR
-`include "src/include/common.sv"
-`include "src/include/pipes.sv"
+`include "include/common.sv"
+`include "include/pipes.sv"
 `else
 
 `endif
@@ -26,8 +26,9 @@ module branch_checker
         unique case (branchType) 
             NoBranch: begin
                 shouldBranch = '0;
+                unEqual = '0;
             end
-            Branch_eq: begin:
+            Branch_eq: begin
                 unEqual = '0;
                 for (int i = 0; i < 64; i++) begin
                     unEqual = unEqual | (rd1[i] ^ rd2[i]);
@@ -35,7 +36,7 @@ module branch_checker
                 shouldBranch = ~unEqual;
                 branch_ctl.pcSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
             end
-            Branch_eq: begin:
+            Branch_ne: begin
                 unEqual = '0;
                 for (int i = 0; i < 64; i++) begin
                     unEqual = unEqual | (rd1[i] ^ rd2[i]);
@@ -44,30 +45,37 @@ module branch_checker
                 branch_ctl.pcSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
             end
             Branch_less_s: begin
+                unEqual = '0;
                 shouldBranch = $signed(rd1) < $signed(rd2);
-                branch_ctl.PCSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
+                branch_ctl.pcSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
             end
             Branch_less_u: begin
+                unEqual = '0;
                 shouldBranch = rd1 < rd2;
-                branch_ctl.PCSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
+                branch_ctl.pcSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
             end
             Branch_ge_s: begin
+                unEqual = '0;
                 shouldBranch = ~($signed(rd1) < $signed(rd2));
-                branch_ctl.PCSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
+                branch_ctl.pcSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
             end
             Branch_ge_u: begin
+                unEqual = '0;
                 shouldBranch = ~(rd1 < rd2);
-                branch_ctl.PCSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
+                branch_ctl.pcSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
             end
             Branch_jal: begin
+                unEqual = '0;
                 shouldBranch = '1;
-                branch_ctl.PCSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
+                branch_ctl.pcSelect = shouldBranch ? PC_From_add_imm : PC_From_add4;
             end
             Branch_jalr: begin
+                unEqual = '0;
                 shouldBranch = '1;
-                branch_ctl.PCSelect = PC_From_jalr;
+                branch_ctl.pcSelect = PC_From_jalr;
             end
             default: begin
+                unEqual = '0;
                 shouldBranch = '0;
             end
         endcase

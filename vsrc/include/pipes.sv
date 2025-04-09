@@ -182,6 +182,7 @@ typedef struct packed {
 	u64 MemWriteData;
 	u64 rd1;
 	u64 rd2;
+	u64 imm_64;
 } execute_data_t;
 
 typedef struct packed {
