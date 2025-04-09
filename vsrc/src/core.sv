@@ -22,6 +22,7 @@
 
 `include "src/pipeline/memory/mem_wb_reg.sv"
 `include "src/pipeline/memory/memory.sv"
+`include "src/pipeline/memory/branch_checker.sv"
 
 `include "src/pipeline/writeback/wb_mux.sv"
 
@@ -47,6 +48,9 @@ module core
 	logic stallM;
 	logic valid;
 	logic if_id_write;
+	branch_data_t branch_ctl;
+	u64 pc_add_imm_mem;
+	u64 pc_jalr_mem;
 
 	// IF阶段
 	u1 stallpc, flush;
@@ -58,6 +62,9 @@ module core
 
 	pc_mux pc_mux(
 		.pcplus4,
+		.pc_add_imm(pc_add_imm_mem),
+		.pc_jalr(pc_jalr_mem),
+		.pcSelect(branch_ctl.pcSelect),
 		.pc_nxt
 	);
 
@@ -146,15 +153,15 @@ module core
 	// EX阶段
 	u64 alu_out;
 	u64 ope2;
-	u64 pc_add_4;
-	u64 pc_add_imm;
-	assign pc_add_4 = dataD.pc + 4;
-	assign pc_add_imm = dataD.pc + dataD.imm_64;
+	u64 pc_add_4_ex;
+	u64 pc_add_imm_ex;
+	assign pc_add_4_ex = dataD.pc + 4;
+	assign pc_add_imm_ex = dataD.pc + dataD.imm_64;
 	rd2_imm_mux rd2_imm_mux(
 		.rd2_from_register(dataD.srcb),
 		.imm_64(dataD.imm_64),
-		.pc_add_4(pc_add_4),
-		.pc_add_imm(pc_add_imm),
+		.pc_add_4(pc_add_4_ex),
+		.pc_add_imm(pc_add_imm_ex),
 		.shamt(dataD.raw_instr[25:20]),
 		.ALUSRC(dataD.ctl.alusrc),
 		.rd2(ope2)
@@ -182,6 +189,17 @@ module core
 	);
 
 	// MEM阶段
+	// TODO 
+	assign pc_add_imm_mem = dataE.pc + dataE.imm_64;
+	assign pc_jalr_mem = (dataE.rd1 + dataE.imm_64) & ~1;
+	branch_checker branch_checker(
+		.rd1(dataE.rd1),
+		.rd2(dataE.rd2),
+		.imm_64(dataE.imm_64),
+		.branchType(dataE.ctl.branchType),
+		.branch_ctl(branch_ctl)
+	);
+
 	memory memory(
 		.dataE,
 		.dreq(dreq),
