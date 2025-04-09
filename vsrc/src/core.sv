@@ -283,12 +283,14 @@ module core
 		.dataE,
 		.dreq(dreq),
 		.stallM(stallM),
+		.flushM,
 		.dresp(dresp),
 		.dataM_nxt(dataM_nxt)
 	);
 
 	mem_wb_reg mem_wb_reg(
 		.clk, .reset,
+		.flushM,
 		.dataM_nxt,
 		.dataM
 	);
