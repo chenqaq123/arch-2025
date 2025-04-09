@@ -195,6 +195,14 @@ typedef struct packed {
 	logic skip;
 } memory_data_t;
 
+typedef enum logic [1:0] {
+	NoNewPC, PC_From_jalr, PC_From_add4, PC_From_add_imm
+} PCSelectType;
+
+typedef struct packed {
+	logic flush;
+	PCSelectType pcSelect;
+} branch_data_t;
 
 endpackage
 
