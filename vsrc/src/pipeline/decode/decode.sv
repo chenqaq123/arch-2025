@@ -20,6 +20,8 @@ module decode
     input u64 rd1, rd2,
     input u64 wb_data,
     input forwarding_control forwardingAA, forwardingBB,
+
+    input logic stall,
     
     output decode_data_t dataD_nxt
 );
@@ -53,7 +55,7 @@ module decode
     assign dataD_nxt.rs1 = dataF.raw_instr[19:15];
 	assign dataD_nxt.rs2 = dataF.raw_instr[24:20];
 
-    assign dataD_nxt.valid = dataF.valid;
+    assign dataD_nxt.valid = dataF.valid & ~stall;
 endmodule
 
 

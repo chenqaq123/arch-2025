@@ -13,23 +13,39 @@ module if_id_reg
     import common::*;
     import pipes::*;(
     input logic clk, reset,
+    input logic branch_ctl_flush,
     input logic stallpc,
     input logic stallM,
     input logic if_id_write,
     input fetch_data_t dataF_nxt,
     output fetch_data_t dataF
 );
+    fetch_data_t dataFReg;
+    logic branch_ctl_flush_store; 
     always_ff @(posedge clk) begin
-
         if(reset) begin
-            dataF <= '0;
+            dataFReg <= '0;
+            branch_ctl_flush_store <= '0;
         end else if (stallM) begin 
-            dataF <= dataF;
+            dataFReg <= dataFReg;
+        end else if (~if_id_write) begin 
+            dataFReg <= dataFReg;
+        end else if (branch_ctl_flush) begin 
+            dataFReg <= '0;
+        end else if (stallpc) begin 
+            dataFReg <= '0;
+        end else if (branch_ctl_flush_store & ~stallpc) begin
+            dataFReg <= '0;
+            branch_ctl_flush_store <= '0;
         end else begin
-            dataF <= dataF_nxt;
+            dataFReg <= dataF_nxt;
         end
-
+        if (branch_ctl_flush) begin
+            branch_ctl_flush_store <= branch_ctl_flush;
+        end
     end
+
+    assign dataF = dataFReg;
 
 endmodule
 
