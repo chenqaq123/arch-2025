@@ -13,6 +13,7 @@ module execute
     import pipes::*;(
     input decode_data_t dataD,
     input u64 alu_out,
+    input u64 ope2,
     output execute_data_t dataE_nxt
 );
     assign dataE_nxt.pc = dataD.pc;
@@ -25,6 +26,9 @@ module execute
     assign dataE_nxt.valid = dataD.valid;
 
     assign dataE_nxt.MemWriteData = dataD.srcb;
+
+    assign dataE_nxt.rd1 = dataD.srca;
+    assign dataE_nxt.rd2 = ope2;
 
 endmodule
 

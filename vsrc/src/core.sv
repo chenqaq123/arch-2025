@@ -164,6 +164,7 @@ module core
 	execute execute(
 		.dataD,
 		.alu_out,
+		.ope2,
 		.dataE_nxt(dataE_nxt)
 	);
 
