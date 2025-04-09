@@ -27,33 +27,76 @@ module decoder
         unique case (opcode)
             opcode_I: begin
                 ctl.regwrite = 1;
-                ctl.alusrc = FromImm;
-                ctl.immGenType = Gen_1;
                 ctl.MemRead = 0;
                 ctl.MemWrite = 0;
                 ctl.MemSize = MSize_zero;
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
+                ctl.branchType = NoBranch;
                 unique case (f3)
                     F3_addi: begin
                         // ctl.op = ADDI;
                         ctl.alufunc = ALU_ADD;
+                        ctl.alusrc = FromImm;
+                        ctl.immGenType = Gen_1;
                     end
                     F3_xori: begin
                         // ctl.op = XORI;
                         ctl.alufunc = ALU_XOR;
+                        ctl.alusrc = FromImm;
+                        ctl.immGenType = Gen_1;
                     end
                     F3_ori: begin
                         // ctl.op = ORI;
                         ctl.alufunc = ALU_OR;
+                        ctl.alusrc = FromImm;
+                        ctl.immGenType = Gen_1;
                     end
                     F3_andi: begin
                         // ctl.op = ANDI;
                         ctl.alufunc = ALU_AND;
+                        ctl.alusrc = FromImm;
+                        ctl.immGenType = Gen_1;
+                    end
+                    F3_slti: begin
+                        ctl.alufunc = ALU_S_LESS;
+                        ctl.alusrc = FromImm;
+                        ctl.immGenType = Gen_1;
+                    end
+                    F3_sltiu: begin
+                        ctl.alufunc = ALU_U_LESS;
+                        ctl.alusrc = FromImm;
+                        ctl.immGenType = Gen_1;
+                    end
+                    F3_slli:begin
+                        ctl.alufunc = ALU_L_SL;
+                        ctl.alusrc = FromShamt;
+                        ctl.immGenType = NoGen;
+                    end
+                    F3_srli_OR_srai: begin
+                        unique case (f7_diff)
+                            1'b0: begin //srli
+                                ctl.alufunc = ALU_L_SR;
+                                ctl.alusrc = FromShamt;
+                                ctl.immGenType = NoGen;
+                            end
+                            1'b1: begin //srai
+                                ctl.alufunc = ALU_A_SR;
+                                ctl.alusrc = FromShamt;
+                                ctl.immGenType = NoGen;
+                            end
+                            default: begin
+                                ctl.alufunc = ALU_UNKNOW;
+                                ctl.alusrc = NoSrc;
+                                ctl.immGenType = NoGen;
+                            end
+                        endcase
                     end
                     default: begin
                         // ctl.op = UNKNOWN;
                         ctl.alufunc = ALU_UNKNOWN;
+                        ctl.alusrc = NoSrc;
+                        ctl.immGenType = NoGen;
                     end
                 endcase
             end
@@ -66,6 +109,7 @@ module decoder
                 ctl.MemSize = MSize_zero;
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
+                ctl.branchType = NoBranch;
                 unique case (f3)
                     F3_add_OR_sub: begin
                         unique case (f7_diff)
@@ -95,6 +139,28 @@ module decoder
                         // ctl.op = AND;
                         ctl.alufunc = ALU_AND;
                     end
+                    F3_sll: begin 
+                        ctl.alufunc = ALU_L_SL;
+                    end
+                    F3_srl_OR_sra: begin
+                        unique case (f7_diff)
+                            1'b0: begin //srl
+                                ctl.alufunc = ALU_L_SR;
+                            end
+                            1'b1: begin //sra
+                                ctl.alufunc = ALU_A_SR;
+                            end
+                            default: begin
+                                ctl.alufunc = ALU_UNKNOW;
+                            end
+                        endcase
+                    end
+                    F3_slt: begin
+                        ctl.alufunc = ALU_S_LESS;
+                    end
+                    F3_sltu: begin
+                        ctl.alufunc = ALU_U_LESS;
+                    end
                     default: begin
                         // ctl.op = UNKNOWN;
                         ctl.alufunc = ALU_UNKNOWN;
@@ -103,21 +169,52 @@ module decoder
             end
             opcode_I_IW: begin
                 ctl.regwrite = 1;
-                ctl.alusrc = FromImm;
-                ctl.immGenType = Gen_1;
                 ctl.MemRead = 0;
                 ctl.MemWrite = 0;
                 ctl.MemSize = MSize_zero;
                 ctl.MemToReg = 0;
-                ctl.wbType = WBNoHandle;
+                ctl.branchType = NoBranch;
                 unique case (f3)
                     F3_addiw: begin
                         // ctl.op = ADDIW;
                         ctl.alufunc = ALU_ADDIW;
+                        ctl.alusrc = FromImm;
+                        ctl.immGenType = Gen_1;
+                        ctl.wbType = WBNoHandle;
+                    end
+                    F3_slliw: begin 
+                        ctl.alufunc = ALU_L_SLIW;
+                        ctl.alusrc = FromShamt;
+                        ctl.immGenType = NoGen;
+                        ctl.wbType = WBNoHandle;
+                    end
+                    F3_srliw_OR_sraiw: begin
+                        unique case (f7_diff)
+                            1'b0: begin //srliw
+                                ctl.alufunc = ALU_L_SRIW;
+                                ctl.alusrc = FromShamt;
+                                ctl.immGenType = NoGen;
+                                ctl.wbType = WBNoHandle;
+                            end
+                            1'b1: begin //sraiw
+                                ctl.alufunc = ALU_A_SRIW;
+                                ctl.alusrc = FromShamt;
+                                ctl.immGenType = NoGen;
+                                ctl.wbType = WBNoHandle;
+                            end
+                            default: begin
+                                ctl.alufunc = ALU_UNKNOW;
+                                ctl.alusrc = NoSrc;
+                                ctl.immGenType = NoGen;
+                                ctl.wbType = WBNoHandle;
+                            end
+                        endcase
                     end
                     default: begin
-                        // ctl.op = UNKNOWN;
-                        ctl.alufunc = ALU_UNKNOWN;
+                        ctl.alufunc = ALU_UNKNOW;
+                        ctl.alusrc = NoSrc;
+                        ctl.immGenType = NoGen;
+                        ctl.wbType = WBNoHandle;
                     end
                 endcase
             end
@@ -130,6 +227,7 @@ module decoder
                 ctl.MemSize = MSize_zero;
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
+                ctl.branchType = NoBranch;
                 unique case (f3)
                     F3_addw_OR_subw: begin
                         unique case (f7_diff)
@@ -147,6 +245,22 @@ module decoder
                             end
                         endcase
                     end
+                    F3_sllw: begin 
+                        ctl.alufunc = ALU_L_SLW;
+                    end
+                    F3_srlw_OR_sraw: begin
+                        unique case (f7_diff)
+                            1'b0: begin //srlw
+                                ctl.alufunc = ALU_L_SRW;
+                            end
+                            1'b1: begin //sraw
+                                ctl.alufunc = ALU_A_SRW;
+                            end
+                            default: begin
+                                ctl.alufunc = ALU_UNKNOW;
+                            end
+                        endcase
+                    end
                     default: begin
                         // ctl.op = UNKNOWN;
                         ctl.alufunc = ALU_UNKNOWN;
@@ -161,6 +275,7 @@ module decoder
                 ctl.alufunc = ALU_ADD;
                 ctl.regwrite = 1;
                 ctl.MemToReg = 1;
+                ctl.branchType = NoBranch;
                 unique case (f3)
                     F3_lb: begin
                         ctl.MemSize = MSize_8bits;
@@ -204,6 +319,7 @@ module decoder
                 ctl.regwrite = 0;
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
+                ctl.branchType = NoBranch;
                 unique case (f3)
                     F3_sb: begin
                         ctl.MemSize = MSize_8bits;
@@ -222,6 +338,40 @@ module decoder
                     end
                 endcase
             end
+            opcode_B: begin
+                ctl.regwrite = 0;
+                ctl.alusrc = FromReg;
+                ctl.immGenType = Gen_3;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.alufunc = ALU_B;
+                ctl.MemToReg = 0;
+                ctl.wbType = WBNoHandle;
+                unique case(f3) 
+                    F3_beq: begin
+                        ctl.branchType = Branch_eq;
+                    end
+                    F3_bne: begin 
+                        ctl.branchType = Branch_ne;
+                    end
+                    F3_blt: begin 
+                        ctl.branchType = Branch_less_s;
+                    end
+                    F3_bltu: begin 
+                        ctl.branchType = Branch_less_u;
+                    end
+                    F3_bge: begin 
+                        ctl.branchType = Branch_ge_s;
+                    end
+                    F3_bgeu: begin 
+                        ctl.branchType = Branch_ge_u;
+                    end
+                    default: begin
+                        ctl.branchType = NoBranch;
+                    end
+                endcase
+            end
             opcode_U_lui: begin
                 ctl.alusrc = FromImm;
                 ctl.immGenType = Gen_2;
@@ -231,6 +381,43 @@ module decoder
                 ctl.alufunc = ALU_LINK;
                 ctl.regwrite = 1;
                 ctl.MemToReg = 0;
+                ctl.wbType = WBNoHandle;
+                ctl.branchType = NoBranch;
+            end
+            opcode_U_auipc: begin
+                ctl.regwrite = 1;
+                ctl.MemToReg = 0;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.alufunc = ALU_LINK;
+                ctl.alusrc = FromPcAddImm;
+                ctl.branchType = NoBranch;
+                ctl.immGenType = Gen_2;
+                ctl.wbType = WBNoHandle;
+            end
+            opcode_J_jal: begin
+                ctl.regwrite = 1;
+                ctl.MemToReg = 0;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.alufunc = ALU_LINK;
+                ctl.alusrc = FromPcAdd4;
+                ctl.branchType = Branch_jal;
+                ctl.immGenType = Gen_5;
+                ctl.wbType = WBNoHandle;
+            end
+            opcode_J_jalr: begin
+                ctl.regwrite = 1;
+                ctl.MemToReg = 0;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.alufunc = ALU_LINK;
+                ctl.alusrc = FromPcAdd4;
+                ctl.branchType = Branch_jalr;
+                ctl.immGenType = Gen_1;
                 ctl.wbType = WBNoHandle;
             end
             default: begin
@@ -244,6 +431,7 @@ module decoder
                 ctl.MemSize = MSize_zero;
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
+                ctl.branchType = NoBranch;
             end
 
         endcase

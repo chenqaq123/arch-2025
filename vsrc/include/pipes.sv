@@ -14,6 +14,16 @@ parameter opcode_I = 7'b0010011;
 	parameter F3_xori = 3'b100;
 	parameter F3_ori = 3'b110;
 	parameter F3_andi = 3'b111;
+	
+	// 条件置位
+	parameter F3_slti = 3'b010;
+	parameter F3_sltiu = 3'b011;
+
+	// 移位 
+	parameter F3_slli = 3'b001;
+	parameter F3_srli_OR_srai = 3'b101;
+		parameter F7_srli = 7'b0000000;
+		parameter F7_srai = 7'b0100000;
 
 parameter opcode_R = 7'b0110011;
 	parameter F3_add_OR_sub = 3'b000;
@@ -23,13 +33,31 @@ parameter opcode_R = 7'b0110011;
 	parameter F3_or = 3'b110;
 	parameter F3_and = 3'b111;
 
+	parameter F3_sll = 3'b001;
+	parameter F3_slt = 3'b010;
+	parameter F3_sltu = 3'b011;
+
+	parameter F3_srl_OR_sra = 3'b101;
+		parameter F7_srl = 7'b0000000;
+		parameter F7_sra = 7'b0100000;
+
 parameter opcode_I_IW = 7'b0011011;
 	parameter F3_addiw = 3'b000;
+
+	parameter F3_slliw = 3'b001;
+	parameter F3_srliw_OR_sraiw = 3'b101;
+		parameter F7_srliw = 7'b0000000;
+		parameter F7_sraiw = 7'b0100000;
 
 parameter opcode_R_W = 7'b0111011;
 	parameter F3_addw_OR_subw = 3'b000;
 		parameter F7_addw = 7'b0000000;
 		parameter F7_subw = 7'b0100000;
+
+	parameter F3_sllw = 3'b001;
+	parameter F3_srlw_OR_sraw = 3'b101;
+		parameter F7_srlw = 7'b0000000;
+		parameter F7_sraw = 7'b0100000;
 
 // load指令
 parameter opcode_I_load = 7'b0000011;
@@ -51,10 +79,25 @@ parameter opcode_S = 7'b0100011;
 // lui指令
 parameter opcode_U_lui = 7'b0110111;
 
+parameter opcode_U_auipc = 7'b0010111;
+
+//J类型 无条件跳转并链接
+parameter opcode_J_jalr = 7'b1100111;
+parameter opcode_J_jal = 7'b1101111;
+
+// B类型 条件跳转指令
+parameter opcode_B = 7'b1100011;
+	parameter F3_beq = 3'b000;
+	parameter F3_bne = 3'b001;
+	parameter F3_blt = 3'b100;
+	parameter F3_bge = 3'b101;
+	parameter F3_bltu = 3'b110;
+	parameter F3_bgeu = 3'b111;
+
 /* Define pipeline structures here */
 
 typedef enum logic [2:0] {
-	NoSrc, FromImm, FromReg
+	NoSrc, FromImm, FromShamt, FromReg, FromPcAddImm, FromPcAdd4
 } ALUSRCType;
 
 typedef enum logic [2:0] {
@@ -78,9 +121,12 @@ typedef struct packed {
 typedef enum logic [4:0] {
 	ALU_UNKNOWN,
 	ALU_ADD, ALU_SUB, ALU_AND, ALU_OR, ALU_XOR, 
-	ALU_ADDW, ALU_SUBW,
-	ALU_ADDIW,
-	ALU_LINK
+	ALU_S_LESS, ALU_U_LESS,
+	ALU_L_SL, ALU_L_SR, ALU_A_SR,
+	ALU_ADDW, ALU_SUBW, ALU_L_SLW, ALU_L_SRW, ALU_A_SRW,
+	ALU_ADDIW, ALU_L_SLIW, ALU_L_SRIW, ALU_A_SRIW,
+	ALU_B,
+	ALU_LINK,
 } alufunc_t;
 
 // 访存大小
@@ -92,6 +138,11 @@ typedef enum logic [2:0] {
 typedef enum logic [3:0] {
 	WBNoHandle, WB_7, WB_15, WB_31, WB_63, WB_7_sext, WB_15_sext, WB_31_sext
 } WBType;
+
+//分支指令类型
+typedef enum logic [3:0] {
+	NoBranch, Branch_eq, Branch_ne, Branch_less_s, Branch_less_u, Branch_ge_s, Branch_ge_u, Branch_jal, Branch_jalr
+} BranchType;
 
 typedef struct packed {
 	// decode_op_t op;
@@ -108,6 +159,7 @@ typedef struct packed {
 	u1 regwrite;
 	u1 MemToReg;
 	WBType wbType;
+	BranchType branchType;
 } control_t;
 
 typedef struct packed {
