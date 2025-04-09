@@ -16,7 +16,9 @@ module alu
 	output u64 ALU_out
 );
 	u64 result;
+	u32 result_32;
 	always_comb begin
+		result_32 = '0;
 		result = '0;  // 添加默认值
 		ALU_out = '0;
 		unique case(ALUOP)
@@ -36,7 +38,24 @@ module alu
 			ALU_XOR: begin
 				ALU_out = rd1 ^ rd2;
 			end
-            // ALU_ADDW, ALU_SUBW, ALU_ADDIW
+			// ALU_S_LESS, ALU_U_LESS
+			ALU_S_LESS: begin
+				ALU_out = { {63{1'b0}}, {$signed(rd1) < $signed(rd2)}};
+			end
+			ALU_U_LESS: begin
+				ALU_out = { {63{1'b0}}, {rd1 < rd2}};
+			end
+			// ALU_L_SL, ALU_L_SR, ALU_A_SR
+			ALU_L_SL: begin
+				ALU_out = rd1 << rd2[5:0];
+			end
+			ALU_L_SR: begin
+				ALU_out = rd1 >> rd2[5:0]; //逻辑右移
+			end
+			ALU_A_SR: begin
+				ALU_out = ($signed(rd1)) >>> rd2[5:0]; //算术右移
+			end
+            // ALU_ADDW, ALU_SUBW, ALU_L_SLW, ALU_L_SRW, ALU_A_SRW
 			ALU_ADDW: begin
 				result = rd1 + rd2;
 				ALU_out = {{32{result[31]}}, result[31:0]};
@@ -45,10 +64,40 @@ module alu
 				result = rd1 - rd2;
 				ALU_out = {{32{result[31]}}, result[31:0]};
 			end
+			ALU_L_SLW: begin //sllw
+				result_32 = rd1[31:0] << rd2[4:0];
+				ALU_out = {{32{result_32[31]}}, result_32[31:0]};
+			end
+			ALU_L_SRW: begin //srlw
+				result_32 = rd1[31:0] >> rd2[4:0];
+				ALU_out = {{32{result_32[31]}}, result_32[31:0]};
+			end
+			ALU_A_SRW: begin //sraw
+				result_32 = ($signed(rd1[31:0])) >>> rd2[4:0];
+				ALU_out = {{32{result_32[31]}}, result_32[31:0]};
+			end
+			// ALU_ADDIW, ALU_L_SLIW, ALU_L_SRIW, ALU_A_SRIW
 			ALU_ADDIW: begin 
 				result = rd1 + rd2;
 				ALU_out = {{32{result[31]}}, result[31:0]};
 			end
+			ALU_L_SLIW: begin
+				result = rd1 << rd2[5:0];
+				ALU_out = {{32{result[31]}}, result[31:0]};
+			end
+			ALU_L_SRIW: begin //srliw
+				result_32 = rd1[31:0] >> rd2[5:0];
+				ALU_out = {{32{result_32[31]}}, result_32[31:0]};
+			end
+			ALU_A_SRIW: begin //sraiw 先截断再右移
+				result_32 = ($signed(rd1[31:0])) >>> rd2[5:0];
+				ALU_out = {{32{result_32[31]}}, result_32[31:0]};
+			end
+			// ALU_B
+			ALU_B: begin
+				ALU_out = '0;
+			end
+			// ALU_LINK
 			ALU_LINK: begin
 				ALU_out = rd2;
 			end
