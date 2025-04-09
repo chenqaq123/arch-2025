@@ -39,7 +39,9 @@ module imm_gen
                 imm_64 = {{32{imm_32[31]}}, imm_32[31:0]};
             end
             Gen_3: begin
-                // TODO
+                // B类型的条件跳转
+                imm_13 = {{raw_instr[31]},{raw_instr[7]},{raw_instr[30:25]},{raw_instr[11:8]},{1'b0}};
+                imm_64 = {{51{imm_13[12]}}, imm_13[12:0]};
             end
             // sd
             Gen_4: begin
@@ -47,7 +49,9 @@ module imm_gen
                 imm_64 = {{52{imm_12[11]}}, imm_12[11:0]};
             end
             Gen_5: begin
-                // TODO
+                // jal
+                imm_21 = {{raw_instr[31]}, {raw_instr[19:12]}, {raw_instr[20]}, {raw_instr[30:21]}, {1'b0}};
+                imm_64 = {{43{imm_21[20]}}, {imm_21[20:0]}};
             end
             default: begin
                 imm_64 = '0;
