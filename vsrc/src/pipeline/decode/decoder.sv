@@ -86,7 +86,7 @@ module decoder
                                 ctl.immGenType = NoGen;
                             end
                             default: begin
-                                ctl.alufunc = ALU_UNKNOW;
+                                ctl.alufunc = ALU_UNKNOWN;
                                 ctl.alusrc = NoSrc;
                                 ctl.immGenType = NoGen;
                             end
@@ -151,7 +151,7 @@ module decoder
                                 ctl.alufunc = ALU_A_SR;
                             end
                             default: begin
-                                ctl.alufunc = ALU_UNKNOW;
+                                ctl.alufunc = ALU_UNKNOWN;
                             end
                         endcase
                     end
@@ -203,7 +203,7 @@ module decoder
                                 ctl.wbType = WBNoHandle;
                             end
                             default: begin
-                                ctl.alufunc = ALU_UNKNOW;
+                                ctl.alufunc = ALU_UNKNOWN;
                                 ctl.alusrc = NoSrc;
                                 ctl.immGenType = NoGen;
                                 ctl.wbType = WBNoHandle;
@@ -211,7 +211,7 @@ module decoder
                         endcase
                     end
                     default: begin
-                        ctl.alufunc = ALU_UNKNOW;
+                        ctl.alufunc = ALU_UNKNOWN;
                         ctl.alusrc = NoSrc;
                         ctl.immGenType = NoGen;
                         ctl.wbType = WBNoHandle;
@@ -257,7 +257,7 @@ module decoder
                                 ctl.alufunc = ALU_A_SRW;
                             end
                             default: begin
-                                ctl.alufunc = ALU_UNKNOW;
+                                ctl.alufunc = ALU_UNKNOWN;
                             end
                         endcase
                     end
