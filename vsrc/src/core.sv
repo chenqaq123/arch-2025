@@ -146,10 +146,16 @@ module core
 	// EX阶段
 	u64 alu_out;
 	u64 ope2;
-
+	u64 pc_add_4;
+	u64 pc_add_imm;
+	assign pc_add_4 = dataD.pc + 4;
+	assign pc_add_imm = dataD.pc + dataD.imm_64;
 	rd2_imm_mux rd2_imm_mux(
 		.rd2_from_register(dataD.srcb),
 		.imm_64(dataD.imm_64),
+		.pc_add_4(pc_add_4),
+		.pc_add_imm(pc_add_imm),
+		.shamt(dataD.raw_instr[25:20]),
 		.ALUSRC(dataD.ctl.alusrc),
 		.rd2(ope2)
 	);
