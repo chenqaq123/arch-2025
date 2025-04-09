@@ -18,6 +18,7 @@ module memory
     output dbus_req_t dreq,
 
     output logic stallM,
+    output logic flushM,
     input dbus_resp_t dresp,
     output memory_data_t dataM_nxt
 );
@@ -110,6 +111,7 @@ module memory
 
     // TODO
     assign stallM = dreq.valid && ~dresp.data_ok;
+    assign flushM = dreq.valid && ~dresp.data_ok;
 
 endmodule
 
