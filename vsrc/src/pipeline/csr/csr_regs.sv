@@ -20,6 +20,7 @@ module csr_regs
     input u64 csr_wdata,
     input logic csr_we,
     output u64 csr_rdata,
+    input u1 isCSRRC,
     
     // mcycle自增
     input logic mcycle_inc,
@@ -74,6 +75,19 @@ module csr_regs
             mtval <= '0;
             mepc <= '0;
             satp <= '0;
+        end else if (csr_we & isCSRRC) begin
+            unique case (csr_addr_write)
+                CSR_MSTATUS: mstatus <= (mstatus & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MSTATUS_MASK);
+                CSR_MTVEC: mtvec <= (mtvec & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MTVEC_MASK);
+                CSR_MIP: mip <= (mip & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MIP_MASK);
+                CSR_MIE: mie <= (mie & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_MSCRATCH: mscratch <= (mscratch & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_MCAUSE: mcause <= (mcause & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_MTVAL: mtval <= (mtval & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_MEPC: mepc <= (mepc & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_SATP: satp <= (satp & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                default: ; // do nothing
+            endcase
         end else if (csr_we) begin
             unique case (csr_addr_write)
                 CSR_MSTATUS: mstatus <= csr_wdata & MSTATUS_MASK;
