@@ -135,7 +135,8 @@ typedef enum logic [4:0] {
 	ALU_ADDIW, ALU_L_SLIW, ALU_L_SRIW, ALU_A_SRIW,
 	ALU_B,
 	ALU_LINK,
-	ALU_RS1_ADD_0
+	ALU_RS1_ADD_0,
+	ALU_CSRRC
 } alufunc_t;
 
 // 访存大小
