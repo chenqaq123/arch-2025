@@ -77,7 +77,9 @@ module core
 		.pc_add_imm(pc_add_imm_mem),
 		.pc_jalr(pc_jalr_mem),
 		.pcSelect(branch_ctl.pcSelect),
-		.pc_nxt
+		.pc_nxt,
+		.CSR_flush(dataD.ctl.isCSR),
+        .csr_pc_plus_4(dataD.pc + 4)
 	);
 
 	assign stallpc = ireq.valid && ~iresp.data_ok;
@@ -86,7 +88,7 @@ module core
 
 	assign pc_write = hazard_ctl.PCWrite & ~stallpc & ~stallM;
 	logic pc_store;
-	assign pc_store = branch_ctl.flush;
+	assign pc_store = branch_ctl.flush | dataD.ctl.isCSR;
 
 	pc pc(
 		.clk, .reset,
@@ -109,7 +111,7 @@ module core
 
 	if_id_reg if_id_reg(
 		.clk, .reset,
-		.branch_ctl_flush(branch_ctl.flush),
+		.branch_ctl_flush(branch_ctl.flush | dataD.ctl.isCSR),
 		.stallpc,
 		.stallM,
 		.if_id_write(hazard_ctl.IF_ID_Write),
@@ -173,9 +175,12 @@ module core
     u64 mcycle_out;
     u64 mhartid_out;
     u64 sstatus_out;
+	u64 mtval_out;
+	u64 satp_out;
 	csr_regs csr_regs(
 		.clk, .reset,
-		.csr_addr(dataF.raw_instr[31:20]),
+		.csr_addr_read(dataF.raw_instr[31:20]),
+		.csr_addr_write(dataD.raw_instr[31:20]),
 		.csr_wdata(alu_out),
 		.csr_we(dataD.ctl.isCSR),
 		.csr_rdata(csr_rdata),
@@ -191,7 +196,9 @@ module core
 		.mscratch_out,
 		.mcycle_out,
 		.mhartid_out,
-		.sstatus_out
+		.sstatus_out,
+		.mtval_out,
+		.satp_out
 	);
 
 	imm_gen imm_gen(
@@ -278,6 +285,7 @@ module core
 		.pc_add_imm(pc_add_imm_ex),
 		.shamt(dataD.raw_instr[25:20]),
 		.ALUSRC(dataD.ctl.alusrc),
+		.csr_rdata(dataD.csr_rdata),
 		.rd2(EX_rd2)
 	);
 
@@ -346,7 +354,7 @@ module core
 `ifdef VERILATOR
 	DifftestInstrCommit DifftestInstrCommit(
 		.clock              (clk),
-		.coreid             (0),
+		.coreid             (mhartid_out[7:0]),
 		.index              (0),
 		.valid              (dataM.valid),
 		.pc                 (dataM.pc),
@@ -361,7 +369,7 @@ module core
 
 	DifftestArchIntRegState DifftestArchIntRegState (
 		.clock              (clk),
-		.coreid             (0),
+		.coreid             (mhartid_out[7:0]),
 		.gpr_0              (regfile.regs_nxt[0]),
 		.gpr_1              (regfile.regs_nxt[1]),
 		.gpr_2              (regfile.regs_nxt[2]),
@@ -398,7 +406,7 @@ module core
 
     DifftestTrapEvent DifftestTrapEvent(
 		.clock              (clk),
-		.coreid             (0),
+		.coreid             (mhartid_out[7:0]),
 		.valid              (0),
 		.code               (0),
 		.pc                 (0),
@@ -408,22 +416,22 @@ module core
 
 	DifftestCSRState DifftestCSRState(
 		.clock              (clk),
-		.coreid             (0),
+		.coreid             (mhartid_out[7:0]),
 		.priviledgeMode     (3),
-		.mstatus            (0),
-		.sstatus            (0 /* mstatus & SSTATUS_MASK */),
-		.mepc               (0),
+		.mstatus            (mstatus_out),
+		.sstatus            (sstatus_out /* mstatus & SSTATUS_MASK */),
+		.mepc               (mepc_out),
 		.sepc               (0),
-		.mtval              (0),
+		.mtval              (mtval_out),
 		.stval              (0),
-		.mtvec              (0),
+		.mtvec              (mtvec_out),
 		.stvec              (0),
-		.mcause             (0),
+		.mcause             (mcause_out),
 		.scause             (0),
-		.satp               (0),
-		.mip                (0),
-		.mie                (0),
-		.mscratch           (0),
+		.satp               (satp_out),
+		.mip                (mip_out),
+		.mie                (mie_out),
+		.mscratch           (mscratch_out),
 		.sscratch           (0),
 		.mideleg            (0),
 		.medeleg            (0)

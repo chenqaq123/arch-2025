@@ -15,7 +15,8 @@ module csr_regs
     input logic clk, reset,
     
     // CSR访问接口
-    input csr_addr_t csr_addr,
+    input csr_addr_t csr_addr_read,
+    input csr_addr_t csr_addr_write,
     input u64 csr_wdata,
     input logic csr_we,
     output u64 csr_rdata,
@@ -33,7 +34,9 @@ module csr_regs
     output u64 mscratch_out,
     output u64 mcycle_out,
     output u64 mhartid_out,
-    output u64 sstatus_out
+    output u64 sstatus_out,
+    output u64 mtval_out,
+    output u64 satp_out
 );
 
     // CSR寄存器定义
@@ -52,7 +55,7 @@ module csr_regs
     always_ff @(posedge clk) begin
         if (reset) begin
             mcycle <= '0;
-        end else if (csr_we && csr_addr == CSR_MCYCLE) begin
+        end else if (csr_we && csr_addr_write == CSR_MCYCLE) begin
             mcycle <= csr_wdata;
         end else if (mcycle_inc) begin
             mcycle <= mcycle + 1;
@@ -72,7 +75,7 @@ module csr_regs
             mepc <= '0;
             satp <= '0;
         end else if (csr_we) begin
-            unique case (csr_addr)
+            unique case (csr_addr_write)
                 CSR_MSTATUS: mstatus <= csr_wdata & MSTATUS_MASK;
                 CSR_MTVEC: mtvec <= csr_wdata & MTVEC_MASK;
                 CSR_MIP: mip <= csr_wdata & MIP_MASK;
@@ -89,7 +92,7 @@ module csr_regs
 
     // CSR读取逻辑
     always_comb begin
-        unique case (csr_addr)
+        unique case (csr_addr_read)
             CSR_MSTATUS: csr_rdata = mstatus;
             CSR_MTVEC: csr_rdata = mtvec;
             CSR_MIP: csr_rdata = mip;
@@ -114,6 +117,8 @@ module csr_regs
     assign mie_out = mie;
     assign mscratch_out = mscratch;
     assign mcycle_out = mcycle;
+    assign mtval_out = mtval;
+    assign satp_out = satp;
 
 endmodule
 

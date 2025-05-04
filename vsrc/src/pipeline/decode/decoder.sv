@@ -505,7 +505,7 @@ module decoder
                     end
                     F3_csrrc: begin
                         ctl.immGenType = NoGen;
-                        ctl.alufunc = ALU_AND;
+                        ctl.alufunc = ALU_CSRRC;
                         regUseType = ONLY_RS1;
                         ctl.CSR_FROM_zimm = 0;
                     end
@@ -523,7 +523,7 @@ module decoder
                     end
                     F3_csrrci: begin
                         ctl.immGenType = Gen_CSR;
-                        ctl.alufunc = ALU_AND;
+                        ctl.alufunc = ALU_CSRRC;
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 1;
                     end

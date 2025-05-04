@@ -14,6 +14,7 @@ module rd2_imm_mux
     input u64 rd2_from_register, imm_64, pc_add_4, pc_add_imm,
     input u6 shamt,
     input ALUSRCType ALUSRC,
+    input u64 csr_rdata,
     output u64 rd2
 );
 
@@ -36,6 +37,9 @@ module rd2_imm_mux
             end
             FromPcAddImm: begin
                 rd2 = pc_add_imm;
+            end
+            FromCSR: begin
+                rd2 = csr_rdata;
             end
             default: begin
                 rd2 = '0;

@@ -16,28 +16,34 @@ module pc_mux
     input u64 pc_add_imm, 
     input u64 pc_jalr,
     input PCSelectType pcSelect,
-    output u64 pc_nxt
+    output u64 pc_nxt,
     
+    input u1 CSR_flush,
+    input u64 csr_pc_plus_4
 );
 
     always_comb begin
-        unique case (pcSelect)
-            NoNewPC: begin
-                pc_nxt = pcplus4;
-            end
-            PC_From_add4: begin
-                pc_nxt = pcplus4;
-            end    
-            PC_From_add_imm: begin
-                pc_nxt = pc_add_imm;
-            end
-            PC_From_jalr: begin
-                pc_nxt = pc_jalr;
-            end
-            default: begin
-                pc_nxt = pcplus4;
-            end
-        endcase
+        if (CSR_flush == 1) begin
+            pc_nxt = csr_pc_plus_4;
+        end else begin
+            unique case (pcSelect)
+                NoNewPC: begin
+                    pc_nxt = pcplus4;
+                end
+                PC_From_add4: begin
+                    pc_nxt = pcplus4;
+                end    
+                PC_From_add_imm: begin
+                    pc_nxt = pc_add_imm;
+                end
+                PC_From_jalr: begin
+                    pc_nxt = pc_jalr;
+                end
+                default: begin
+                    pc_nxt = pcplus4;
+                end
+            endcase
+        end
     end
 
 
