@@ -114,6 +114,7 @@ module memory
     assign flushM = dreq.valid && ~dresp.data_ok;
 
     assign dataM_nxt.csr = dataE.csr;
+    assign dataM_nxt.csr_rdata = dataE.csr_rdata;
 endmodule
 
 `endif

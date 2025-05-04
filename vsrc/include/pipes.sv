@@ -172,6 +172,8 @@ typedef struct packed {
 	// CSR相关
 	u1 ReadCSR;
 	u1 WriteCSR;
+	u1 isCSR;
+	u1 CSR_FROM_zimm;
 } control_t;
 
 typedef struct packed {
@@ -185,6 +187,7 @@ typedef struct packed {
 	u64 imm_64;
 	logic valid;
 	csr_addr_t csr;
+	u64 csr_rdata;
 } decode_data_t;
 
 typedef struct packed {
@@ -199,6 +202,7 @@ typedef struct packed {
 	u64 rd2;
 	u64 imm_64;
 	csr_addr_t csr;
+	u64 csr_rdata;
 } execute_data_t;
 
 typedef struct packed {
@@ -211,6 +215,7 @@ typedef struct packed {
 	u64 MemReadData;	// 从memory中读取的数据
 	logic skip;
 	csr_addr_t csr;
+	u64 csr_rdata;
 } memory_data_t;
 
 typedef enum logic [1:0] {

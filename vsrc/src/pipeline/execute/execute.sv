@@ -31,6 +31,7 @@ module execute
     assign dataE_nxt.rd2 = ope2;
     assign dataE_nxt.imm_64 = dataD.imm_64;
     assign dataE_nxt.csr = dataD.csr;
+    assign dataE_nxt.csr_rdata = dataD.csr_rdata;
 endmodule
 
 `endif
