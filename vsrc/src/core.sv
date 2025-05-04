@@ -29,6 +29,8 @@
 
 `include "src/pipeline/regfile/regfile.sv"
 
+`include "src/pipeline/csr/csr_regs.sv"
+
 `include "src/pipeline/unit/forwarding_unit.sv"
 `include "src/pipeline/unit/hazard_detection_unit.sv"
 `include "src/pipeline/unit/rd_forwarding_mux.sv"
@@ -121,6 +123,7 @@ module core
 	u64 rd1, rd2;
 	u64 imm_64;
 	reg_use_type regUseType;
+	u64 csr_rdata;
 
 	assign ra1 = dataF.raw_instr[19:15];
 	assign ra2 = dataF.raw_instr[24:20];
@@ -160,6 +163,37 @@ module core
 		.wd(write_data)
 	);
 
+	u64 mstatus_out;
+    u64 mtvec_out;
+    u64 mepc_out;
+    u64 mcause_out;
+    u64 mip_out;
+    u64 mie_out;
+    u64 mscratch_out;
+    u64 mcycle_out;
+    u64 mhartid_out;
+    u64 sstatus_out;
+	csr_regs csr_regs(
+		.clk, .reset,
+		.csr_addr(dataF.raw_instr[31:20]),
+		.csr_wdata(alu_out),
+		.csr_we(dataD.ctl.isCSR),
+		.csr_rdata(csr_rdata),
+
+		.mcycle_inc(1'b1),
+
+		.mstatus_out,
+		.mtvec_out,
+		.mepc_out,
+		.mcause_out,
+		.mip_out,
+		.mie_out,
+		.mscratch_out,
+		.mcycle_out,
+		.mhartid_out,
+		.sstatus_out
+	);
+
 	imm_gen imm_gen(
 		.raw_instr(dataF.raw_instr),
 		.immGenType(ctl.immGenType),
@@ -171,6 +205,7 @@ module core
 		.dataF,
 		.ctl,
 		.imm_64,
+		.csr_rdata,
 
 		.rd1,
 		.rd2,
@@ -300,6 +335,8 @@ module core
 		.ALU_out(dataM.alu_out),
 		.MemReadData(dataM.MemReadData),
 		.MemToReg(dataM.ctl.MemToReg),
+		.isCSR(dataM.ctl.isCSR),
+		.csr_rdata(dataM.csr_rdata),
 		.wd(write_data)
 	);
 

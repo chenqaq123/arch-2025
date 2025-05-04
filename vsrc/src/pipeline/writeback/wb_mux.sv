@@ -14,9 +14,11 @@ module wb_mux
     input u64 ALU_out,
     input u64 MemReadData,
     input logic MemToReg,
+    input u1 isCSR,
+    input u64 csr_rdata,
     output u64 wd 
 );
-    assign wd = MemToReg ? MemReadData : ALU_out;
+    assign wd = isCSR ? csr_rdata : (MemToReg ? MemReadData : ALU_out);
 endmodule
 
 `endif

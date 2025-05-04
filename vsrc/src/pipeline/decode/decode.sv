@@ -16,6 +16,7 @@ module decode
     input fetch_data_t dataF,
     input control_t ctl,
     input u64 imm_64,
+    input u64 csr_rdata,
 
     input u64 rd1, rd2,
     input u64 wb_data,
@@ -49,14 +50,27 @@ module decode
     assign dataD_nxt.ctl = ctl;
     assign dataD_nxt.dst = dataF.raw_instr[11:7];
 
-    assign dataD_nxt.srca = ID_rd1;
-    assign dataD_nxt.srcb = ID_rd2;
     assign dataD_nxt.imm_64 = imm_64;
     assign dataD_nxt.rs1 = dataF.raw_instr[19:15];
 	assign dataD_nxt.rs2 = dataF.raw_instr[24:20];
 
     assign dataD_nxt.valid = dataF.valid & ~stall;
     assign dataD_nxt.csr = dataF.raw_instr[31:20];
+    assign dataD_nxt.csr_rdata = csr_rdata;
+
+    always_comb begin
+        if (ctl.CSR_FROM_zimm == 1) begin
+            dataD_nxt.srca = imm_64;
+        end else begin
+            dataD_nxt.srca = ID_rd1;
+        end
+        if (ctl.isCSR == 1) begin
+            dataD_nxt.srcb = csr_rdata;
+        end else begin
+            dataD_nxt.srcb = ID_rd2;
+        end
+    end
+    
 endmodule
 
 
