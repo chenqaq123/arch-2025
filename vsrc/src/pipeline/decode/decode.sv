@@ -56,6 +56,7 @@ module decode
 	assign dataD_nxt.rs2 = dataF.raw_instr[24:20];
 
     assign dataD_nxt.valid = dataF.valid & ~stall;
+    assign dataD_nxt.csr = dataF.raw_instr[31:20];
 endmodule
 
 

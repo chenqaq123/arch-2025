@@ -101,6 +101,9 @@ module alu
 			ALU_LINK: begin
 				ALU_out = rd2;
 			end
+			ALU_RS1_ADD_0: begin
+				ALU_out = rd1;
+			end
 			default: begin
 				ALU_out = '0;
 			end

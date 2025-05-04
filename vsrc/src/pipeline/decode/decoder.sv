@@ -36,6 +36,8 @@ module decoder
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
                 ctl.branchType = NoBranch;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
                 unique case (f3)
                     F3_addi: begin
                         // ctl.op = ADDI;
@@ -114,6 +116,8 @@ module decoder
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
                 ctl.branchType = NoBranch;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
                 unique case (f3)
                     F3_add_OR_sub: begin
                         unique case (f7_diff)
@@ -179,6 +183,8 @@ module decoder
                 ctl.MemSize = MSize_zero;
                 ctl.MemToReg = 0;
                 ctl.branchType = NoBranch;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
                 unique case (f3)
                     F3_addiw: begin
                         // ctl.op = ADDIW;
@@ -234,6 +240,8 @@ module decoder
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
                 ctl.branchType = NoBranch;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
                 unique case (f3)
                     F3_addw_OR_subw: begin
                         unique case (f7_diff)
@@ -283,6 +291,8 @@ module decoder
                 ctl.regwrite = 1;
                 ctl.MemToReg = 1;
                 ctl.branchType = NoBranch;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
                 unique case (f3)
                     F3_lb: begin
                         ctl.MemSize = MSize_8bits;
@@ -328,6 +338,8 @@ module decoder
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
                 ctl.branchType = NoBranch;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
                 unique case (f3)
                     F3_sb: begin
                         ctl.MemSize = MSize_8bits;
@@ -357,6 +369,8 @@ module decoder
                 ctl.alufunc = ALU_B;
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
                 unique case(f3) 
                     F3_beq: begin
                         ctl.branchType = Branch_eq;
@@ -393,6 +407,8 @@ module decoder
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
                 ctl.branchType = NoBranch;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
             end
             opcode_U_auipc: begin
                 regUseType = NO_RS1_RS2;
@@ -406,6 +422,8 @@ module decoder
                 ctl.branchType = NoBranch;
                 ctl.immGenType = Gen_2;
                 ctl.wbType = WBNoHandle;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
             end
             opcode_J_jal: begin
                 regUseType = NO_RS1_RS2;
@@ -419,6 +437,8 @@ module decoder
                 ctl.branchType = Branch_jal;
                 ctl.immGenType = Gen_5;
                 ctl.wbType = WBNoHandle;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
             end
             opcode_J_jalr: begin
                 regUseType = ONLY_RS1;
@@ -432,6 +452,50 @@ module decoder
                 ctl.branchType = Branch_jalr;
                 ctl.immGenType = Gen_1;
                 ctl.wbType = WBNoHandle;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
+            end
+            opcode_I_CSR: begin
+                ctl.alusrc = FromCSR;
+                ctl.MemRead = 0;
+                ctl.MemWrite = 0;
+                ctl.MemSize = MSize_zero;
+                ctl.regwrite = 1;
+                ctl.MemToReg = 0;
+                ctl.wbType = WBNoHandle;
+                ctl.branchType = NoBranch;
+                ctl.ReadCSR = 1;
+                ctl.WriteCSR = 1;
+                unique case (f3)
+                    F3_csrrw: begin
+                        ctl.immGenType = NoGen;
+                        ctl.alufunc = ALU_RS1_ADD_0;
+                    end
+                    F3_csrrs: begin
+                        ctl.immGenType = NoGen;
+                        ctl.alufunc = ALU_OR;
+                    end
+                    F3_csrrc: begin
+                        ctl.immGenType = NoGen;
+                        ctl.alufunc = ALU_AND;
+                    end
+                    F3_csrrwi: begin
+                        ctl.immGenType = Gen_CSR;
+                        ctl.alufunc = ALU_RS1_ADD_0;
+                    end
+                    F3_csrrsi: begin
+                        ctl.immGenType = Gen_CSR;
+                        ctl.alufunc = ALU_OR;
+                    end
+                    F3_csrrci: begin
+                        ctl.immGenType = Gen_CSR;
+                        ctl.alufunc = ALU_AND;
+                    end
+                    default: begin
+                        ctl.immGenType = NoGen;
+                        ctl.alufunc = ALU_UNKNOWN;
+                    end
+                endcase
             end
             default: begin
                 ctl.regwrite = 0;
@@ -445,8 +509,9 @@ module decoder
                 ctl.MemToReg = 0;
                 ctl.wbType = WBNoHandle;
                 ctl.branchType = NoBranch;
+                ctl.ReadCSR = 0;
+                ctl.WriteCSR = 0;
             end
-
         endcase
     end
 
