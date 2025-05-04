@@ -113,6 +113,7 @@ module memory
     assign stallM = dreq.valid && ~dresp.data_ok;
     assign flushM = dreq.valid && ~dresp.data_ok;
 
+    assign dataM_nxt.csr = dataE.csr;
 endmodule
 
 `endif

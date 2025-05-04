@@ -53,6 +53,9 @@ module imm_gen
                 imm_21 = {{raw_instr[31]}, {raw_instr[19:12]}, {raw_instr[20]}, {raw_instr[30:21]}, {1'b0}};
                 imm_64 = {{43{imm_21[20]}}, {imm_21[20:0]}};
             end
+            Gen_CSR: begin
+                imm_64 = {59'b0, raw_instr[19:15]};
+            end
             default: begin
                 imm_64 = '0;
             end

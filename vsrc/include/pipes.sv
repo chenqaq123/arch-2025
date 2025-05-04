@@ -94,14 +94,22 @@ parameter opcode_B = 7'b1100011;
 	parameter F3_bltu = 3'b110;
 	parameter F3_bgeu = 3'b111;
 
+parameter opcode_I_CSR = 7'b1110011;
+	parameter F3_csrrw = 3'b001;
+	parameter F3_csrrs = 3'b010;
+	parameter F3_csrrc = 3'b011;
+	parameter F3_csrrwi = 3'b101;
+	parameter F3_csrrsi = 3'b110;
+	parameter F3_csrrci = 3'b111;
+
 /* Define pipeline structures here */
 
 typedef enum logic [2:0] {
-	NoSrc, FromImm, FromShamt, FromReg, FromPcAddImm, FromPcAdd4
+	NoSrc, FromImm, FromShamt, FromReg, FromPcAddImm, FromPcAdd4, FromCSR
 } ALUSRCType;
 
 typedef enum logic [2:0] {
-	NoGen, Gen_1, Gen_2, Gen_3, Gen_4, Gen_5 
+	NoGen, Gen_1, Gen_2, Gen_3, Gen_4, Gen_5, Gen_CSR
 } ImmGenType;
 
 typedef struct packed {
@@ -126,7 +134,8 @@ typedef enum logic [4:0] {
 	ALU_ADDW, ALU_SUBW, ALU_L_SLW, ALU_L_SRW, ALU_A_SRW,
 	ALU_ADDIW, ALU_L_SLIW, ALU_L_SRIW, ALU_A_SRIW,
 	ALU_B,
-	ALU_LINK
+	ALU_LINK,
+	ALU_RS1_ADD_0
 } alufunc_t;
 
 // 访存大小
@@ -160,6 +169,9 @@ typedef struct packed {
 	u1 MemToReg;
 	WBType wbType;
 	BranchType branchType;
+	// CSR相关
+	u1 ReadCSR;
+	u1 WriteCSR;
 } control_t;
 
 typedef struct packed {
@@ -172,6 +184,7 @@ typedef struct packed {
 	creg_addr_t dst; 
 	u64 imm_64;
 	logic valid;
+	csr_addr_t csr;
 } decode_data_t;
 
 typedef struct packed {
@@ -185,6 +198,7 @@ typedef struct packed {
 	u64 rd1;
 	u64 rd2;
 	u64 imm_64;
+	csr_addr_t csr;
 } execute_data_t;
 
 typedef struct packed {
@@ -196,6 +210,7 @@ typedef struct packed {
 	logic valid;
 	u64 MemReadData;	// 从memory中读取的数据
 	logic skip;
+	csr_addr_t csr;
 } memory_data_t;
 
 typedef enum logic [1:0] {
