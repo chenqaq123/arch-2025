@@ -184,6 +184,7 @@ module core
 		.csr_wdata(alu_out),
 		.csr_we(dataD.ctl.isCSR),
 		.csr_rdata(csr_rdata),
+		.isCSRRC(dataD.ctl.isCSRRC),
 
 		.mcycle_inc(1'b1),
 

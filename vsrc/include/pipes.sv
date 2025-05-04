@@ -175,6 +175,7 @@ typedef struct packed {
 	u1 WriteCSR;
 	u1 isCSR;
 	u1 CSR_FROM_zimm;
+	u1 isCSRRC;
 } control_t;
 
 typedef struct packed {

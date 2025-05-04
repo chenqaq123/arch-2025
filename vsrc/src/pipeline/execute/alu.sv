@@ -105,7 +105,7 @@ module alu
 				ALU_out = rd1;
 			end
 			ALU_CSRRC: begin
-				ALU_out = (rd2 & ~(rd1)) & 'b01111;
+				ALU_out = (rd2 & ~(rd1));
 			end
 			default: begin
 				ALU_out = '0;

@@ -39,6 +39,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 unique case (f3)
                     F3_addi: begin
@@ -121,6 +122,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 unique case (f3)
                     F3_add_OR_sub: begin
@@ -190,6 +192,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 unique case (f3)
                     F3_addiw: begin
@@ -249,6 +252,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 unique case (f3)
                     F3_addw_OR_subw: begin
@@ -302,6 +306,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 unique case (f3)
                     F3_lb: begin
@@ -351,6 +356,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 unique case (f3)
                     F3_sb: begin
@@ -384,6 +390,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 unique case(f3) 
                     F3_beq: begin
@@ -424,6 +431,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
             end
             opcode_U_auipc: begin
@@ -441,6 +449,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
             end
             opcode_J_jal: begin
@@ -458,6 +467,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
             end
             opcode_J_jalr: begin
@@ -475,6 +485,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
             end
             opcode_I_CSR: begin
@@ -496,42 +507,49 @@ module decoder
                         ctl.alufunc = ALU_RS1_ADD_0;
                         regUseType = ONLY_RS1;
                         ctl.CSR_FROM_zimm = 0;
+                        ctl.isCSRRC = 0;
                     end
                     F3_csrrs: begin
                         ctl.immGenType = NoGen;
                         ctl.alufunc = ALU_OR;
                         regUseType = ONLY_RS1;
                         ctl.CSR_FROM_zimm = 0;
+                        ctl.isCSRRC = 0;
                     end
                     F3_csrrc: begin
                         ctl.immGenType = NoGen;
                         ctl.alufunc = ALU_CSRRC;
                         regUseType = ONLY_RS1;
                         ctl.CSR_FROM_zimm = 0;
+                        ctl.isCSRRC = 1;
                     end
                     F3_csrrwi: begin
                         ctl.immGenType = Gen_CSR;
                         ctl.alufunc = ALU_RS1_ADD_0;
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 1;
+                        ctl.isCSRRC = 0;
                     end
                     F3_csrrsi: begin
                         ctl.immGenType = Gen_CSR;
                         ctl.alufunc = ALU_OR;
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 1;
+                        ctl.isCSRRC = 0;
                     end
                     F3_csrrci: begin
                         ctl.immGenType = Gen_CSR;
                         ctl.alufunc = ALU_CSRRC;
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 1;
+                        ctl.isCSRRC = 1;
                     end
                     default: begin
                         ctl.immGenType = NoGen;
                         ctl.alufunc = ALU_UNKNOWN;
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 0;
+                        ctl.isCSRRC = 0;
                     end
                 endcase
             end
@@ -550,6 +568,7 @@ module decoder
                 ctl.ReadCSR = 0;
                 ctl.WriteCSR = 0;
                 ctl.isCSR = 0;
+                ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
             end
         endcase
