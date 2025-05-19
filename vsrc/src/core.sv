@@ -59,6 +59,8 @@ module core
 	forwarding_control forwardingA, forwardingB;
 	forwarding_control forwardingAA, forwardingBB;
 
+	u64 alu_out;
+
 	// TODO 处理两个结构体
 	branch_data_t branch_ctl;
 	hazard_control_t hazard_ctl;
@@ -100,7 +102,7 @@ module core
 
 	assign ireq.valid = 1'b1;
 	assign ireq.addr = IF_pc;
-	assign raw_instr = iresp.data;
+	assign raw_instr = iresp.data_ok ? iresp.data : 0;
 
 	fetch fetch(
 		.pc(IF_pc),
@@ -234,7 +236,6 @@ module core
 	);
 
 	// EX阶段
-	u64 alu_out;
 	u64 pc_add_4_ex;
 	u64 pc_add_imm_ex;
 	assign pc_add_4_ex = dataD.pc + 4;
