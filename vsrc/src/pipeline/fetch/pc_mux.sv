@@ -19,11 +19,16 @@ module pc_mux
     output u64 pc_nxt,
     
     input u1 CSR_flush,
-    input u64 csr_pc_plus_4
+    input u64 csr_pc_plus_4,
+    input u1 isEcall,
+    input u1 isMRET,
+    input u64 csr_next_pc
 );
 
     always_comb begin
-        if (CSR_flush == 1) begin
+        if (isEcall | isMRET) begin
+            pc_nxt = csr_next_pc;
+        end else if (CSR_flush == 1) begin
             pc_nxt = csr_pc_plus_4;
         end else begin
             unique case (pcSelect)

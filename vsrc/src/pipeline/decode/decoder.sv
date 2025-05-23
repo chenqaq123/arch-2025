@@ -41,6 +41,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
                 unique case (f3)
                     F3_addi: begin
                         // ctl.op = ADDI;
@@ -124,6 +126,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
                 unique case (f3)
                     F3_add_OR_sub: begin
                         unique case (f7_diff)
@@ -194,6 +198,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
                 unique case (f3)
                     F3_addiw: begin
                         // ctl.op = ADDIW;
@@ -254,6 +260,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
                 unique case (f3)
                     F3_addw_OR_subw: begin
                         unique case (f7_diff)
@@ -308,6 +316,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
                 unique case (f3)
                     F3_lb: begin
                         ctl.MemSize = MSize_8bits;
@@ -358,6 +368,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
                 unique case (f3)
                     F3_sb: begin
                         ctl.MemSize = MSize_8bits;
@@ -392,6 +404,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
                 unique case(f3) 
                     F3_beq: begin
                         ctl.branchType = Branch_eq;
@@ -433,6 +447,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
             end
             opcode_U_auipc: begin
                 regUseType = NO_RS1_RS2;
@@ -451,6 +467,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
             end
             opcode_J_jal: begin
                 regUseType = NO_RS1_RS2;
@@ -469,6 +487,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
             end
             opcode_J_jalr: begin
                 regUseType = ONLY_RS1;
@@ -487,6 +507,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
             end
             opcode_I_CSR: begin
                 ctl.alusrc = FromCSR;
@@ -508,6 +530,8 @@ module decoder
                         regUseType = ONLY_RS1;
                         ctl.CSR_FROM_zimm = 0;
                         ctl.isCSRRC = 0;
+                        ctl.isEcall = 0;
+                        ctl.isMRET = 0;
                     end
                     F3_csrrs: begin
                         ctl.immGenType = NoGen;
@@ -515,6 +539,8 @@ module decoder
                         regUseType = ONLY_RS1;
                         ctl.CSR_FROM_zimm = 0;
                         ctl.isCSRRC = 0;
+                        ctl.isEcall = 0;
+                        ctl.isMRET = 0;
                     end
                     F3_csrrc: begin
                         ctl.immGenType = NoGen;
@@ -522,6 +548,8 @@ module decoder
                         regUseType = ONLY_RS1;
                         ctl.CSR_FROM_zimm = 0;
                         ctl.isCSRRC = 1;
+                        ctl.isEcall = 0;
+                        ctl.isMRET = 0;
                     end
                     F3_csrrwi: begin
                         ctl.immGenType = Gen_CSR;
@@ -529,6 +557,8 @@ module decoder
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 1;
                         ctl.isCSRRC = 0;
+                        ctl.isEcall = 0;
+                        ctl.isMRET = 0;
                     end
                     F3_csrrsi: begin
                         ctl.immGenType = Gen_CSR;
@@ -536,6 +566,8 @@ module decoder
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 1;
                         ctl.isCSRRC = 0;
+                        ctl.isEcall = 0;
+                        ctl.isMRET = 0;
                     end
                     F3_csrrci: begin
                         ctl.immGenType = Gen_CSR;
@@ -543,6 +575,39 @@ module decoder
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 1;
                         ctl.isCSRRC = 1;
+                        ctl.isEcall = 0;
+                        ctl.isMRET = 0;
+                    end
+                    F3_e: begin
+                        unique case (raw_instr[31:20])
+                            F12_ecall: begin
+                                ctl.immGenType = NoGen;
+                                ctl.alufunc = ALU_B;
+                                regUseType = NO_RS1_RS2;
+                                ctl.CSR_FROM_zimm = 0;
+                                ctl.isCSRRC = 0;
+                                ctl.isEcall = 1;
+                                ctl.isMRET = 0;
+                            end
+                            F12_mret: begin
+                                ctl.immGenType = NoGen;
+                                ctl.alufunc = ALU_B;
+                                regUseType = NO_RS1_RS2;
+                                ctl.CSR_FROM_zimm = 0;
+                                ctl.isCSRRC = 0;
+                                ctl.isEcall = 0;
+                                ctl.isMRET = 1;
+                            end
+                            default: begin
+                                ctl.immGenType = NoGen;
+                                ctl.alufunc = ALU_UNKNOWN;
+                                regUseType = NO_RS1_RS2;
+                                ctl.CSR_FROM_zimm = 0;
+                                ctl.isCSRRC = 0;
+                                ctl.isEcall = 0;
+                                ctl.isMRET = 0;
+                            end
+                        endcase
                     end
                     default: begin
                         ctl.immGenType = NoGen;
@@ -550,6 +615,8 @@ module decoder
                         regUseType = NO_RS1_RS2;
                         ctl.CSR_FROM_zimm = 0;
                         ctl.isCSRRC = 0;
+                        ctl.isEcall = 0;
+                        ctl.isMRET = 0;
                     end
                 endcase
             end
@@ -570,6 +637,8 @@ module decoder
                 ctl.isCSR = 0;
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
+                ctl.isEcall = 0;
+                ctl.isMRET = 0;
             end
         endcase
     end
