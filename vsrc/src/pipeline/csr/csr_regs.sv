@@ -21,12 +21,16 @@ module csr_regs
     input logic csr_we,
     output u64 csr_rdata,
     input u1 isCSRRC,
+    input u1 isEcall,
+    input u1 isMRET,
+    input u64 pc,
+    output u64 next_pc,
     
     // mcycle自增
     input logic mcycle_inc,
     
     // DifftestCSRState接口
-    output u64 mstatus_out,
+    output mstatus_t mstatus_out,
     output u64 mtvec_out,
     output u64 mepc_out,
     output u64 mcause_out,
@@ -37,13 +41,17 @@ module csr_regs
     output u64 mhartid_out,
     output u64 sstatus_out,
     output u64 mtval_out,
-    output u64 satp_out
+    output satp_t satp_out,
+    output u2 priviledgeMode_out
 );
 
     // CSR寄存器定义
-    u64 mstatus, mtvec, mip, mie, mscratch;
+    u64 mtvec, mip, mie, mscratch;
     u64 mcause, mtval, mepc, mcycle;
-    u64 mhartid, satp;
+    u64 mhartid;
+    mstatus_t mstatus;
+    satp_t satp;
+    u2 priviledgeMode;
 
     // mhartid固定为0
     assign mhartid = '0;
@@ -75,6 +83,23 @@ module csr_regs
             mtval <= '0;
             mepc <= '0;
             satp <= '0;
+            priviledgeMode <= 3;
+        end else if (isEcall) begin
+            // TODO
+            mepc <= pc;
+            next_pc <= mtvec;
+            mstatus.mpie <= mstatus.mie;
+            mstatus.mie <= 0;
+            mstatus.mpp <= priviledgeMode;
+            priviledgeMode <= 3;
+        end else if (isMRET) begin
+            // TODO
+            next_pc <= mepc;
+            mstatus.mie <= mstatus.mpie;
+            mstatus.mpie <= 1;
+            priviledgeMode <= mstatus_out.mpp;
+            mstatus.mpp <= 0;
+            mstatus.xs <= 0;
         end else if (csr_we & isCSRRC) begin
             unique case (csr_addr_write)
                 CSR_MSTATUS: mstatus <= (mstatus & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MSTATUS_MASK);
@@ -133,6 +158,7 @@ module csr_regs
     assign mcycle_out = mcycle;
     assign mtval_out = mtval;
     assign satp_out = satp;
+    assign priviledgeMode_out = priviledgeMode;
 
 endmodule
 

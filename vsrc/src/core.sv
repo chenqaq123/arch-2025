@@ -4,6 +4,7 @@
 `ifdef VERILATOR
 `include "include/common.sv"
 `include "include/pipes.sv"
+`include "include/csr.sv"
 
 `include "src/pipeline/fetch/fetch.sv"
 `include "src/pipeline/fetch/IF_ID_reg.sv"
@@ -38,13 +39,18 @@
 
 module core 
 	import common::*;
-	import pipes::*;(
+	import pipes::*;
+	import csr_pkg::*;(
 	input  logic       clk, reset,
 	output ibus_req_t  ireq,
 	input  ibus_resp_t iresp,
 	output dbus_req_t  dreq,
 	input  dbus_resp_t dresp,
-	input  logic       trint, swint, exint
+	input  logic       trint, swint, exint,
+
+	output u4 satp_mode,
+	output u44 satp_ppn,
+	output u2 priviledgeMode
 );
 	/* TODO: Add your CPU-Core here. */
 	fetch_data_t dataF, dataF_nxt;
@@ -59,6 +65,7 @@ module core
 	forwarding_control forwardingA, forwardingB;
 	forwarding_control forwardingAA, forwardingBB;
 
+
 	u64 alu_out;
 
 	// TODO 处理两个结构体
@@ -72,8 +79,11 @@ module core
 	u32 raw_instr;
 	logic pc_write;
 
+
+
 	assign pcplus4 = IF_pc + 4;
 
+	u64 csr_next_pc;
 	pc_mux pc_mux(
 		.pcplus4,
 		.pc_add_imm(pc_add_imm_mem),
@@ -81,7 +91,10 @@ module core
 		.pcSelect(branch_ctl.pcSelect),
 		.pc_nxt,
 		.CSR_flush(dataD.ctl.isCSR),
-        .csr_pc_plus_4(dataD.pc + 4)
+		.isEcall(dataD.ctl.isEcall),
+		.isMRET(dataD.ctl.isMRET),
+        .csr_pc_plus_4(dataD.pc + 4),
+		.csr_next_pc(csr_next_pc)
 	);
 
 	assign stallpc = ireq.valid && ~iresp.data_ok;
@@ -167,7 +180,7 @@ module core
 		.wd(write_data)
 	);
 
-	u64 mstatus_out;
+	mstatus_t mstatus_out;
     u64 mtvec_out;
     u64 mepc_out;
     u64 mcause_out;
@@ -178,7 +191,7 @@ module core
     u64 mhartid_out;
     u64 sstatus_out;
 	u64 mtval_out;
-	u64 satp_out;
+	satp_t satp_out;
 	csr_regs csr_regs(
 		.clk, .reset,
 		.csr_addr_read(dataF.raw_instr[31:20]),
@@ -187,6 +200,10 @@ module core
 		.csr_we(dataD.ctl.isCSR),
 		.csr_rdata(csr_rdata),
 		.isCSRRC(dataD.ctl.isCSRRC),
+		.isEcall(dataD.ctl.isEcall),
+		.isMRET(dataD.ctl.isMRET),
+		.pc(dataD.pc),
+		.next_pc(csr_next_pc),
 
 		.mcycle_inc(1'b1),
 
@@ -201,8 +218,12 @@ module core
 		.mhartid_out,
 		.sstatus_out,
 		.mtval_out,
-		.satp_out
+		.satp_out,
+		.priviledgeMode_out(priviledgeMode)
 	);
+
+	assign satp_mode = satp_out.mode;
+	assign satp_ppn = satp_out.ppn;
 
 	imm_gen imm_gen(
 		.raw_instr(dataF.raw_instr),
@@ -351,8 +372,6 @@ module core
 	);
 
 
-
-
 `ifdef VERILATOR
 	DifftestInstrCommit DifftestInstrCommit(
 		.clock              (clk),
@@ -419,7 +438,7 @@ module core
 	DifftestCSRState DifftestCSRState(
 		.clock              (clk),
 		.coreid             (mhartid_out[7:0]),
-		.priviledgeMode     (3),
+		.priviledgeMode     (priviledgeMode),
 		.mstatus            (mstatus_out),
 		.sstatus            (sstatus_out /* mstatus & SSTATUS_MASK */),
 		.mepc               (mepc_out),
