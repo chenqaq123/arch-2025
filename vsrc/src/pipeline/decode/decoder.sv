@@ -579,8 +579,8 @@ module decoder
                         ctl.isMRET = 0;
                     end
                     F3_e: begin
-                        unique case (raw_instr[31:20])
-                            F12_ecall: begin
+                        unique case (raw_instr[31:25])
+                            F7_ecall: begin
                                 ctl.immGenType = NoGen;
                                 ctl.alufunc = ALU_B;
                                 regUseType = NO_RS1_RS2;
@@ -589,7 +589,7 @@ module decoder
                                 ctl.isEcall = 1;
                                 ctl.isMRET = 0;
                             end
-                            F12_mret: begin
+                            F7_mret: begin
                                 ctl.immGenType = NoGen;
                                 ctl.alufunc = ALU_B;
                                 regUseType = NO_RS1_RS2;
@@ -597,6 +597,15 @@ module decoder
                                 ctl.isCSRRC = 0;
                                 ctl.isEcall = 0;
                                 ctl.isMRET = 1;
+                            end
+                            F7_fence: begin
+                                ctl.immGenType = NoGen;
+                                ctl.alufunc = ALU_B;
+                                regUseType = NO_RS1_RS2;
+                                ctl.CSR_FROM_zimm = 0;
+                                ctl.isCSRRC = 0;
+                                ctl.isEcall = 0;
+                                ctl.isMRET = 0;
                             end
                             default: begin
                                 ctl.immGenType = NoGen;
