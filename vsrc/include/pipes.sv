@@ -102,8 +102,10 @@ parameter opcode_I_CSR = 7'b1110011;
 	parameter F3_csrrsi = 3'b110;
 	parameter F3_csrrci = 3'b111;
 	parameter F3_e = 3'b000;
-		parameter F12_ecall = 12'b000000000000;
-		parameter F12_mret = 12'b001100000010;
+		// parameter F12_ecall = 12'b000000000000;
+		parameter F7_fence = 7'b0001001;
+		parameter F7_mret = 7'b0011000;
+		parameter F7_ecall = 7'b0000000;
 
 /* Define pipeline structures here */
 
