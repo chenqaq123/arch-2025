@@ -132,7 +132,11 @@ module mmu
 
             S_CHECK: begin
                 next_base_ppn = next_pte[53:10];
-                next_state = (lvl > 0) ? S_REQ : S_DONE;
+                if (pte[3:1] == 3'b000 & lvl > 0) begin
+                    next_state = S_REQ;
+                end else begin
+                    next_state = S_DONE;
+                end
                 next_lvl = lvl - 1;
             end
 

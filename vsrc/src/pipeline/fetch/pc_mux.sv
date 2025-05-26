@@ -26,7 +26,7 @@ module pc_mux
 );
 
     always_comb begin
-        if (isEcall | isMRET) begin
+        if (isEcall==1 | isMRET==1) begin
             pc_nxt = csr_next_pc;
         end else if (CSR_flush == 1) begin
             pc_nxt = csr_pc_plus_4;
