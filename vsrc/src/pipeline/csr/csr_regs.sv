@@ -71,6 +71,18 @@ module csr_regs
         end
     end
 
+    always_comb begin
+        if (reset) begin
+            next_pc = 0;
+        end else if (isMRET) begin
+            next_pc = mepc;
+        end else if (isEcall) begin
+            next_pc = mtvec;
+        end else begin
+            next_pc = 0;
+        end
+    end
+
     // CSR读写逻辑
     always_ff @(posedge clk) begin
         if (reset) begin
@@ -85,16 +97,12 @@ module csr_regs
             satp <= '0;
             priviledgeMode <= 3;
         end else if (isEcall) begin
-            // TODO
             mepc <= pc;
-            next_pc <= mtvec;
             mstatus.mpie <= mstatus.mie;
             mstatus.mie <= 0;
             mstatus.mpp <= priviledgeMode;
             priviledgeMode <= 3;
         end else if (isMRET) begin
-            // TODO
-            next_pc <= mepc;
             mstatus.mie <= mstatus.mpie;
             mstatus.mpie <= 1;
             priviledgeMode <= mstatus_out.mpp;
