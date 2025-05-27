@@ -35,6 +35,10 @@ module CBusArbiter
     logic mmu_resp_valid;
     logic mmu_stall;
     u64 translated_addr;
+
+    // 内存请求多路复用
+    cbus_req_t mmu_creq;
+    cbus_resp_t mmu_cresp;
     
     typedef enum logic [2:0] {
         S_IDLE,         
@@ -63,10 +67,6 @@ module CBusArbiter
         .creq(mmu_creq),
         .cresp(mmu_cresp)
     );
-    
-    // 内存请求多路复用
-    cbus_req_t mmu_creq;
-    cbus_resp_t mmu_cresp;
     
     // 输出请求多路复用
     always_comb begin
@@ -100,7 +100,7 @@ module CBusArbiter
     always_ff @(posedge clk) begin
         if (reset) begin
             state <= S_IDLE;
-            busy <= 1'b0;
+            busy <= 1'b0;   
         end else begin
             state <= next_state;
             

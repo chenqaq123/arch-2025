@@ -25,16 +25,26 @@ module VTop
     cbus_req_t  icreq,  dcreq;
     cbus_resp_t icresp, dcresp;
 
-    core core(.*);
+    u4 satp_mode;
+    u44 satp_ppn;
+    u2 priviledgeMode;
+
+    core core(
+      .clk(clk), .reset, .ireq, .iresp, .dreq, .dresp, .trint, .swint, .exint, .satp_mode, .satp_ppn, .priviledgeMode
+    );
     IBusToCBus icvt(.*);
 
     DBusToCBus dcvt(.*);
 
-
     CBusArbiter mux(
+        .clk(clk), .reset,
         .ireqs({icreq, dcreq}),
         .iresps({icresp, dcresp}),
-        .*
+        .oreq,
+        .oresp,
+        .satp_ppn(satp_ppn),
+        .satp_mode(satp_mode),
+        .priviledgeMode(priviledgeMode)
     );
 
 	always_ff @(posedge clk) begin
