@@ -65,6 +65,7 @@ module core
 	forwarding_control forwardingA, forwardingB;
 	forwarding_control forwardingAA, forwardingBB;
 
+	u1 ID_ecall_flag, EXE_ecall_flag;
 
 	u64 alu_out;
 
@@ -78,7 +79,6 @@ module core
 	u64 pcplus4, pc_nxt, IF_pc;
 	u32 raw_instr;
 	logic pc_write;
-
 
 
 	assign pcplus4 = IF_pc + 4;
@@ -113,9 +113,11 @@ module core
 		.pc(IF_pc)
 	);
 
-	assign ireq.valid = 1'b1;
+	assign ireq.valid = (~ID_ecall_flag)&(~EXE_ecall_flag);
 	assign ireq.addr = IF_pc;
 	assign raw_instr = iresp.data_ok ? iresp.data : 0;
+
+
 
 	fetch fetch(
 		.pc(IF_pc),
@@ -370,6 +372,9 @@ module core
 		.csr_rdata(dataM.csr_rdata),
 		.wd(write_data)
 	);
+
+	assign ID_ecall_flag = dataD_nxt.ctl.isEcall;
+	assign EXE_ecall_flag = dataD.ctl.isEcall;
 
 
 `ifdef VERILATOR

@@ -98,6 +98,7 @@ module csr_regs
             priviledgeMode <= 3;
         end else if (isEcall) begin
             mepc <= pc;
+            mcause <= 64'h0000000000000008;
             mstatus.mpie <= mstatus.mie;
             mstatus.mie <= 0;
             mstatus.mpp <= priviledgeMode;
