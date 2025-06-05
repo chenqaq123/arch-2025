@@ -11,6 +11,7 @@
 module decoder
     import common::*;
     import pipes::*;(
+    input u64 pc,
     input u32 raw_instr,
     output reg_use_type regUseType,
     output control_t ctl
@@ -26,6 +27,11 @@ module decoder
         opcode = raw_instr[6:0];
         f3 = raw_instr[14:12];
         f7_diff = raw_instr[30];
+
+        if (pc[1:0] != 2'b00) begin
+            ctl.instr_misalign = 1;
+        end
+
         unique case (opcode)
             opcode_I: begin
                 regUseType = ONLY_RS1;
@@ -42,6 +48,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
                 unique case (f3)
                     F3_addi: begin
@@ -127,6 +134,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
                 unique case (f3)
                     F3_add_OR_sub: begin
@@ -199,6 +207,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
                 unique case (f3)
                     F3_addiw: begin
@@ -261,6 +270,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
                 unique case (f3)
                     F3_addw_OR_subw: begin
@@ -317,6 +327,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
                 unique case (f3)
                     F3_lb: begin
@@ -369,6 +380,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
                 unique case (f3)
                     F3_sb: begin
@@ -405,6 +417,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
                 unique case(f3) 
                     F3_beq: begin
@@ -448,6 +461,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
             end
             opcode_U_auipc: begin
@@ -468,6 +482,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
             end
             opcode_J_jal: begin
@@ -488,6 +503,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
             end
             opcode_J_jalr: begin
@@ -508,6 +524,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
             end
             opcode_I_CSR: begin
@@ -531,6 +548,7 @@ module decoder
                         ctl.CSR_FROM_zimm = 0;
                         ctl.isCSRRC = 0;
                         ctl.isEcall = 0;
+                        ctl.exception = 0;
                         ctl.isMRET = 0;
                     end
                     F3_csrrs: begin
@@ -540,6 +558,7 @@ module decoder
                         ctl.CSR_FROM_zimm = 0;
                         ctl.isCSRRC = 0;
                         ctl.isEcall = 0;
+                        ctl.exception = 0;
                         ctl.isMRET = 0;
                     end
                     F3_csrrc: begin
@@ -549,6 +568,7 @@ module decoder
                         ctl.CSR_FROM_zimm = 0;
                         ctl.isCSRRC = 1;
                         ctl.isEcall = 0;
+                        ctl.exception = 0;
                         ctl.isMRET = 0;
                     end
                     F3_csrrwi: begin
@@ -558,6 +578,7 @@ module decoder
                         ctl.CSR_FROM_zimm = 1;
                         ctl.isCSRRC = 0;
                         ctl.isEcall = 0;
+                        ctl.exception = 0;
                         ctl.isMRET = 0;
                     end
                     F3_csrrsi: begin
@@ -567,6 +588,7 @@ module decoder
                         ctl.CSR_FROM_zimm = 1;
                         ctl.isCSRRC = 0;
                         ctl.isEcall = 0;
+                        ctl.exception = 0;
                         ctl.isMRET = 0;
                     end
                     F3_csrrci: begin
@@ -576,6 +598,7 @@ module decoder
                         ctl.CSR_FROM_zimm = 1;
                         ctl.isCSRRC = 1;
                         ctl.isEcall = 0;
+                        ctl.exception = 0;
                         ctl.isMRET = 0;
                     end
                     F3_e: begin
@@ -587,6 +610,7 @@ module decoder
                                 ctl.CSR_FROM_zimm = 0;
                                 ctl.isCSRRC = 0;
                                 ctl.isEcall = 1;
+                                ctl.exception = 1;
                                 ctl.isMRET = 0;
                             end
                             F7_mret: begin
@@ -596,6 +620,7 @@ module decoder
                                 ctl.CSR_FROM_zimm = 0;
                                 ctl.isCSRRC = 0;
                                 ctl.isEcall = 0;
+                                ctl.exception = 0;
                                 ctl.isMRET = 1;
                             end
                             F7_fence: begin
@@ -605,6 +630,7 @@ module decoder
                                 ctl.CSR_FROM_zimm = 0;
                                 ctl.isCSRRC = 0;
                                 ctl.isEcall = 0;
+                                ctl.exception = 0;
                                 ctl.isMRET = 0;
                             end
                             default: begin
@@ -614,6 +640,7 @@ module decoder
                                 ctl.CSR_FROM_zimm = 0;
                                 ctl.isCSRRC = 0;
                                 ctl.isEcall = 0;
+                                ctl.exception = 0;
                                 ctl.isMRET = 0;
                             end
                         endcase
@@ -625,6 +652,7 @@ module decoder
                         ctl.CSR_FROM_zimm = 0;
                         ctl.isCSRRC = 0;
                         ctl.isEcall = 0;
+                        ctl.exception = 0;
                         ctl.isMRET = 0;
                     end
                 endcase
@@ -647,6 +675,7 @@ module decoder
                 ctl.isCSRRC = 0;
                 ctl.CSR_FROM_zimm = 0;
                 ctl.isEcall = 0;
+                ctl.exception = 0;
                 ctl.isMRET = 0;
             end
         endcase
