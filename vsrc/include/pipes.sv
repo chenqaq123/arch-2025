@@ -181,8 +181,10 @@ typedef struct packed {
 	u1 isCSR;
 	u1 CSR_FROM_zimm;
 	u1 isCSRRC;
+	u1 exception;
 	u1 isEcall;
 	u1 isMRET;
+	u1 instr_misalign;
 } control_t;
 
 typedef struct packed {

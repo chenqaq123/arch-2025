@@ -65,7 +65,7 @@ module core
 	forwarding_control forwardingA, forwardingB;
 	forwarding_control forwardingAA, forwardingBB;
 
-	u1 ID_ecall_flag, EXE_ecall_flag;
+	u1 ID_exception, EXE_exception;
 
 	u64 alu_out;
 
@@ -91,7 +91,7 @@ module core
 		.pcSelect(branch_ctl.pcSelect),
 		.pc_nxt,
 		.CSR_flush(dataD.ctl.isCSR),
-		.isEcall(dataD.ctl.isEcall),
+		.exception(dataD.ctl.exception),
 		.isMRET(dataD.ctl.isMRET),
         .csr_pc_plus_4(dataD.pc + 4),
 		.csr_next_pc(csr_next_pc)
@@ -113,7 +113,7 @@ module core
 		.pc(IF_pc)
 	);
 
-	assign ireq.valid = (~ID_ecall_flag)&(~EXE_ecall_flag);
+	assign ireq.valid = (~ID_exception)&(~EXE_exception);
 	assign ireq.addr = IF_pc;
 	assign raw_instr = iresp.data_ok ? iresp.data : 0;
 
@@ -148,6 +148,7 @@ module core
 	assign ra2 = dataF.raw_instr[24:20];
 
 	decoder decoder(
+		.pc(dataF.pc),
 		.raw_instr(dataF.raw_instr),
 		.regUseType(regUseType),
 		.ctl(ctl_nxt)
@@ -373,8 +374,8 @@ module core
 		.wd(write_data)
 	);
 
-	assign ID_ecall_flag = dataD_nxt.ctl.isEcall;
-	assign EXE_ecall_flag = dataD.ctl.isEcall;
+	assign ID_exception = dataD_nxt.ctl.isEcall;
+	assign EXE_exception = dataD.ctl.isEcall;
 
 
 `ifdef VERILATOR
