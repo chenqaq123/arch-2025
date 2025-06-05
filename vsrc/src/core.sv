@@ -91,7 +91,7 @@ module core
 		.pcSelect(branch_ctl.pcSelect),
 		.pc_nxt,
 		.CSR_flush(dataD.ctl.isCSR),
-		.exception(dataD.ctl.exception),
+		.exception(dataD.ctl.exception & dataD.valid),
 		.isMRET(dataD.ctl.isMRET),
         .csr_pc_plus_4(dataD.pc + 4),
 		.csr_next_pc(csr_next_pc)
@@ -103,7 +103,7 @@ module core
 
 	assign pc_write = hazard_ctl.PCWrite & ~stallpc & ~stallM;
 	logic pc_store;
-	assign pc_store = branch_ctl.flush | dataD.ctl.isCSR | dataD.ctl.exception;
+	assign pc_store = branch_ctl.flush | (dataD.ctl.isCSR & dataD.valid) | (dataD.ctl.exception & dataD.valid);
 
 	pc pc(
 		.clk, .reset,
@@ -128,7 +128,7 @@ module core
 
 	if_id_reg if_id_reg(
 		.clk, .reset,
-		.branch_ctl_flush(branch_ctl.flush | dataD.ctl.isCSR),
+		.branch_ctl_flush(branch_ctl.flush | dataD.ctl.isCSR | dataD.ctl.exception),
 		.stallpc,
 		.stallM,
 		.if_id_write(hazard_ctl.IF_ID_Write),
@@ -200,13 +200,13 @@ module core
 		.csr_addr_read(dataF.raw_instr[31:20]),
 		.csr_addr_write(dataD.raw_instr[31:20]),
 		.csr_wdata(alu_out),
-		.csr_we(dataD.ctl.isCSR),
+		.csr_we(dataD.ctl.isCSR & dataD.valid),
 		.csr_rdata(csr_rdata),
-		.isCSRRC(dataD.ctl.isCSRRC),
-		.exception(dataD.ctl.exception),
-		.isEcall(dataD.ctl.isEcall),
-		.isInstrMisalign(dataD.ctl.instr_misalign),
-		.isMRET(dataD.ctl.isMRET),
+		.isCSRRC(dataD.ctl.isCSRRC & dataD.valid),
+		.exception(dataD.ctl.exception & dataD.valid),
+		.isEcall(dataD.ctl.isEcall & dataD.valid),
+		.isInstrMisalign(dataD.ctl.instr_misalign & dataD.valid),
+		.isMRET(dataD.ctl.isMRET & dataD.valid),
 		.pc(dataD.pc),
 		.next_pc(csr_next_pc),
 
@@ -256,7 +256,7 @@ module core
 	id_ex_reg id_ex_reg(
 		.clk, .reset,
 		.stall(stallM),
-		.flush(branch_ctl.flush),
+		.flush(branch_ctl.flush | dataD.ctl.isCSR | dataD.ctl.exception),
 		.dataD_nxt,
 		.dataD
 	);
