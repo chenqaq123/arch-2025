@@ -59,6 +59,15 @@ test-lab4: sim
 test-lab5: sim
 	TEST=$(TEST) ./build/emu --diff $(NEMU_HOME)/riscv64-nemu-interpreter-so -i ./ready-to-run/lab5/kernel.bin $(VOPT) || true
 
+test-lab6: sim
+	TEST=sys ./build/emu --no-diff -i ./ready-to-run/lab6/lab6-test.bin $(VOPT) || true
+
+test-lab6-diff: sim
+	TEST=sys ./build/emu --diff $(NEMU_HOME)/riscv64-nemu-interpreter-so-lab6 -i ./ready-to-run/lab6/lab6-test.bin $(VOPT) || true
+
+test-microbench: sim
+	TEST=$(TEST) ./build/emu --diff $(NEMU_HOME)/riscv64-nemu-interpreter-so -i ./ready-to-run/lab+/microbench-riscv64-nutshell.bin $(VOPT) || true
+
 clean:
 	rm -rf build
 
