@@ -21,7 +21,9 @@ module csr_regs
     input logic csr_we,
     output u64 csr_rdata,
     input u1 isCSRRC,
+    input u1 exception,
     input u1 isEcall,
+    input u1 isInstrMisalign,
     input u1 isMRET,
     input u64 pc,
     output u64 next_pc,
@@ -76,7 +78,7 @@ module csr_regs
             next_pc = 0;
         end else if (isMRET) begin
             next_pc = mepc;
-        end else if (isEcall) begin
+        end else if (exception) begin
             next_pc = mtvec;
         end else begin
             next_pc = 0;
@@ -98,7 +100,15 @@ module csr_regs
             priviledgeMode <= 3;
         end else if (isEcall) begin
             mepc <= pc;
-            mcause <= 64'h0000000000000008;
+            mcause <= MCAUSE_ECALL_U;
+            mstatus.mpie <= mstatus.mie;
+            mstatus.mie <= 0;
+            mstatus.mpp <= priviledgeMode;
+            priviledgeMode <= 3;
+        end else if (isInstrMisalign) begin
+            // TODO 
+            mepc <= pc;
+            mcause <= MCAUSE_INSTRUCTION_ADDRESS_MISALIGNED;
             mstatus.mpie <= mstatus.mie;
             mstatus.mie <= 0;
             mstatus.mpp <= priviledgeMode;

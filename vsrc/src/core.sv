@@ -103,7 +103,7 @@ module core
 
 	assign pc_write = hazard_ctl.PCWrite & ~stallpc & ~stallM;
 	logic pc_store;
-	assign pc_store = branch_ctl.flush | dataD.ctl.isCSR;
+	assign pc_store = branch_ctl.flush | dataD.ctl.isCSR | dataD.ctl.exception;
 
 	pc pc(
 		.clk, .reset,
@@ -203,7 +203,9 @@ module core
 		.csr_we(dataD.ctl.isCSR),
 		.csr_rdata(csr_rdata),
 		.isCSRRC(dataD.ctl.isCSRRC),
+		.exception(dataD.ctl.exception),
 		.isEcall(dataD.ctl.isEcall),
+		.isInstrMisalign(dataD.ctl.instr_misalign),
 		.isMRET(dataD.ctl.isMRET),
 		.pc(dataD.pc),
 		.next_pc(csr_next_pc),
@@ -374,8 +376,8 @@ module core
 		.wd(write_data)
 	);
 
-	assign ID_exception = dataD_nxt.ctl.isEcall;
-	assign EXE_exception = dataD.ctl.isEcall;
+	assign ID_exception = dataD_nxt.ctl.isEcall | dataD_nxt.ctl.instr_misalign;
+	assign EXE_exception = dataD.ctl.isEcall | dataD.ctl.instr_misalign;
 
 
 `ifdef VERILATOR
