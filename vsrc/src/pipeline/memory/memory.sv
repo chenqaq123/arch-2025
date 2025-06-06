@@ -115,15 +115,33 @@ module memory
         end
     end
 
+    always_comb begin
+        dataM_nxt.ctl = dataE.ctl;
+        unique case (dataE.ctl.op)
+            LD: dataM_nxt.ctl.load_misalign = dataE.alu_out[2:0] != 3'b000;
+            LW, LWU: dataM_nxt.ctl.load_misalign = dataE.alu_out[1:0] != 2'b00;
+            LH, LHU: dataM_nxt.ctl.load_misalign = dataE.alu_out[0] != 1'b0;
+            LB, LBU: dataM_nxt.ctl.load_misalign = 0;
+            default: dataM_nxt.ctl.load_misalign = 0;
+        endcase
+        unique case (dataE.ctl.op)
+            SD: dataM_nxt.ctl.store_misalign = dataE.alu_out[2:0] != 3'b000;
+            SW: dataM_nxt.ctl.store_misalign = dataE.alu_out[1:0] != 2'b00;
+            SH: dataM_nxt.ctl.store_misalign = dataE.alu_out[0] != 1'b0;
+            SB: dataM_nxt.ctl.store_misalign = 0;
+            default: dataM_nxt.ctl.store_misalign = 0;
+        endcase
+        dataM_nxt.ctl.exception = dataM_nxt.ctl.exception | dataM_nxt.ctl.load_misalign | dataM_nxt.ctl.store_misalign;
+    end
+
     assign dataM_nxt.pc = dataE.pc;
     assign dataM_nxt.raw_instr = dataE.raw_instr;
 
-    assign dataM_nxt.ctl = dataE.ctl;
     assign dataM_nxt.dst = dataE.dst;
     assign dataM_nxt.alu_out = dataE.alu_out;
 
     // 修改valid信号的赋值，考虑flush_dreq_res
-    assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.alufunc != ALU_UNKNOWN) & ~flush_dreq_res;
+    assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.op != UNKNOWN) & ~flush_dreq_res;
     assign dataM_nxt.MemReadData = rd;
     assign dataM_nxt.skip = skip;
 
