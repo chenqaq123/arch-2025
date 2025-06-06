@@ -88,6 +88,9 @@ package csr_pkg;
   parameter u64 MCAUSE_LOAD_PAGE_FAULT = 64'hd;
   parameter u64 MCAUSE_INTERRUPT_MASK = 64'h8000000000000000;
 
+  parameter u2 PRIV_U = 2'b00;
+  parameter u2 PRIV_M = 2'b11;
+
 endpackage
 
 `endif

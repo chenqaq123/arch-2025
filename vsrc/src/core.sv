@@ -65,7 +65,8 @@ module core
 	forwarding_control forwardingA, forwardingB;
 	forwarding_control forwardingAA, forwardingBB;
 
-	u1 ID_exception, EXE_exception;
+	u1 ID_exception, EXE_exception, MEM_exception, WB_exception;
+	u1 csr_flush;
 
 	u64 alu_out;
 
@@ -90,10 +91,10 @@ module core
 		.pc_jalr(pc_jalr_mem),
 		.pcSelect(branch_ctl.pcSelect),
 		.pc_nxt,
-		.CSR_flush(dataD.ctl.isCSR),
-		.exception(dataD.ctl.exception & dataD.valid),
-		.isMRET(dataD.ctl.isMRET),
-        .csr_pc_plus_4(dataD.pc + 4),
+		.CSR_flush(dataM.ctl.isCSR & dataM.valid),
+		.exception(dataM.ctl.exception & dataM.valid),
+		.isMRET(dataM.ctl.isMRET & dataM.valid),
+        .csr_pc_plus_4(dataM.pc + 4),
 		.csr_next_pc(csr_next_pc)
 	);
 
@@ -103,7 +104,7 @@ module core
 
 	assign pc_write = hazard_ctl.PCWrite & ~stallpc & ~stallM;
 	logic pc_store;
-	assign pc_store = branch_ctl.flush | (dataD.ctl.isCSR & dataD.valid) | (dataD.ctl.exception & dataD.valid);
+	assign pc_store = branch_ctl.flush | (dataM.ctl.isCSR & dataM.valid) | (dataM.ctl.exception & dataM.valid);
 
 	pc pc(
 		.clk, .reset,
@@ -113,7 +114,7 @@ module core
 		.pc(IF_pc)
 	);
 
-	assign ireq.valid = (~ID_exception)&(~EXE_exception);
+	assign ireq.valid = (~ID_exception)&(~EXE_exception)&(~MEM_exception)&(~WB_exception);
 	assign ireq.addr = IF_pc;
 	assign raw_instr = iresp.data_ok ? iresp.data : 0;
 
@@ -128,7 +129,7 @@ module core
 
 	if_id_reg if_id_reg(
 		.clk, .reset,
-		.branch_ctl_flush(branch_ctl.flush | dataD.ctl.isCSR | dataD.ctl.exception),
+		.branch_ctl_flush(branch_ctl.flush | csr_flush),
 		.stallpc,
 		.stallM,
 		.if_id_write(hazard_ctl.IF_ID_Write),
@@ -198,16 +199,16 @@ module core
 	csr_regs csr_regs(
 		.clk, .reset,
 		.csr_addr_read(dataF.raw_instr[31:20]),
-		.csr_addr_write(dataD.raw_instr[31:20]),
-		.csr_wdata(alu_out),
-		.csr_we(dataD.ctl.isCSR & dataD.valid),
+		.csr_addr_write(dataM.raw_instr[31:20]),
+		.csr_wdata(dataM.alu_out),
+		.csr_we(dataM.ctl.isCSR & dataM.valid),
 		.csr_rdata(csr_rdata),
-		.isCSRRC(dataD.ctl.isCSRRC & dataD.valid),
-		.exception(dataD.ctl.exception & dataD.valid),
-		.isEcall(dataD.ctl.isEcall & dataD.valid),
-		.isInstrMisalign(dataD.ctl.instr_misalign & dataD.valid),
-		.isMRET(dataD.ctl.isMRET & dataD.valid),
-		.pc(dataD.pc),
+		.isCSRRC(dataM.ctl.isCSRRC & dataM.valid),
+		.exception(dataM.ctl.exception & dataM.valid),
+		.isEcall(dataM.ctl.isEcall & dataM.valid),
+		.isInstrMisalign(dataM.ctl.instr_misalign & dataM.valid),
+		.isMRET(dataM.ctl.isMRET & dataM.valid),
+		.pc(dataM.pc),
 		.next_pc(csr_next_pc),
 
 		.mcycle_inc(1'b1),
@@ -256,7 +257,7 @@ module core
 	id_ex_reg id_ex_reg(
 		.clk, .reset,
 		.stall(stallM),
-		.flush(branch_ctl.flush | dataD.ctl.isCSR | dataD.ctl.exception),
+		.flush(branch_ctl.flush | csr_flush),
 		.dataD_nxt,
 		.dataD
 	);
@@ -334,6 +335,7 @@ module core
 	ex_mem_reg ex_mem_reg(
 		.clk, .reset,
 		.flush(branch_ctl.flush),
+		.csr_flush(csr_flush),
 		.stall(stallM),
 		.dataE_nxt,
 		.dataE
@@ -351,10 +353,12 @@ module core
 	);
 
 	memory memory(
+		.clk, .reset,
 		.dataE,
 		.dreq(dreq),
 		.stallM(stallM),
 		.flushM,
+		.csr_flush(csr_flush),
 		.dresp(dresp),
 		.dataM_nxt(dataM_nxt)
 	);
@@ -362,6 +366,7 @@ module core
 	mem_wb_reg mem_wb_reg(
 		.clk, .reset,
 		.flushM,
+		.csr_flush(csr_flush),
 		.dataM_nxt,
 		.dataM
 	);
@@ -376,8 +381,11 @@ module core
 		.wd(write_data)
 	);
 
-	assign ID_exception = dataD_nxt.ctl.isEcall | dataD_nxt.ctl.instr_misalign;
-	assign EXE_exception = dataD.ctl.isEcall | dataD.ctl.instr_misalign;
+	assign ID_exception = (dataD_nxt.ctl.isEcall | dataD_nxt.ctl.instr_misalign) & dataD_nxt.valid;
+	assign EXE_exception = (dataD.ctl.isEcall | dataD.ctl.instr_misalign) & dataD.valid;
+	assign MEM_exception = (dataE.ctl.isEcall | dataE.ctl.instr_misalign) & dataE.valid;
+	assign WB_exception = (dataM.ctl.isEcall | dataM.ctl.instr_misalign) & dataM.valid;
+	assign csr_flush = (dataM.ctl.isCSR | dataM.ctl.exception) & dataM.valid;
 
 
 `ifdef VERILATOR
