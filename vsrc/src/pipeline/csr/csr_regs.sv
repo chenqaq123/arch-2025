@@ -24,6 +24,9 @@ module csr_regs
     input u1 exception,
     input u1 isEcall,
     input u1 isInstrMisalign,
+    input u1 isIllegalINstr,
+    input u1 isLoadMisalign,
+    input u1 isStoreMisalign,
     input u1 isMRET,
     input u64 pc,
     output u64 next_pc,
@@ -68,7 +71,19 @@ module csr_regs
     // sstatus是mstatus的部分位
     assign sstatus_out = mstatus_nxt & SSTATUS_MASK;
 
+    u64 exception_type;
     always_comb begin
+        if (isEcall) begin
+            exception_type = MCAUSE_ECALL_U;
+        end else if (isInstrMisalign) begin
+            exception_type = MCAUSE_INSTRUCTION_ADDRESS_MISALIGNED;
+        end else if (isLoadMisalign) begin
+            exception_type = MCAUSE_LOAD_ADDRESS_MISALIGNED;
+        end else if (isStoreMisalign) begin
+            exception_type = MCAUSE_STORE_AMO_ADDRESS_MISALIGNED;
+        end else begin
+            exception_type = 0;
+        end
         if (reset) begin
             mstatus_nxt = '0;
             mtvec_nxt = '0;
@@ -80,17 +95,9 @@ module csr_regs
             mepc_nxt = '0;
             satp_nxt = '0;
             priviledgeMode_nxt = PRIV_M;
-        end else if (isEcall) begin
+        end else if (exception) begin
             mepc_nxt = pc;
-            mcause_nxt = MCAUSE_ECALL_U;
-            mstatus_nxt.mpie = mstatus.mie;
-            mstatus_nxt.mie = 0;
-            mstatus_nxt.mpp = priviledgeMode;
-            priviledgeMode_nxt = PRIV_M;
-        end else if (isInstrMisalign) begin
-            // TODO 
-            mepc_nxt = pc;
-            mcause_nxt = MCAUSE_INSTRUCTION_ADDRESS_MISALIGNED;
+            mcause_nxt = exception_type;
             mstatus_nxt.mpie = mstatus.mie;
             mstatus_nxt.mie = 0;
             mstatus_nxt.mpp = priviledgeMode;
