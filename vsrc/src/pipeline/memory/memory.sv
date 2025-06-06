@@ -14,11 +14,13 @@
 module memory
 	import common::*;
 	import pipes::*;(
+    input logic clk, reset,
     input execute_data_t dataE,
     output dbus_req_t dreq,
 
     output logic stallM,
     output logic flushM,
+    input logic csr_flush,
     input dbus_resp_t dresp,
     output memory_data_t dataM_nxt
 );
@@ -98,6 +100,21 @@ module memory
         .strobe(strobe)
     );
 
+    logic flush_dreq_res;
+
+    // 添加一个寄存器来记录是否在flush期间发起了访存请求
+    always_ff @(posedge clk) begin
+        if (reset) begin
+            flush_dreq_res <= 1'b0;
+        end else if (csr_flush && dreq.valid) begin
+            // 如果在flush期间发起了访存请求，记录下来
+            flush_dreq_res <= 1'b1;
+        end else if (dresp.data_ok) begin
+            // 当访存结果返回时，清除标记
+            flush_dreq_res <= 1'b0;
+        end
+    end
+
     assign dataM_nxt.pc = dataE.pc;
     assign dataM_nxt.raw_instr = dataE.raw_instr;
 
@@ -105,7 +122,8 @@ module memory
     assign dataM_nxt.dst = dataE.dst;
     assign dataM_nxt.alu_out = dataE.alu_out;
 
-    assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.alufunc != ALU_UNKNOWN);
+    // 修改valid信号的赋值，考虑flush_dreq_res
+    assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.alufunc != ALU_UNKNOWN) & ~flush_dreq_res;
     assign dataM_nxt.MemReadData = rd;
     assign dataM_nxt.skip = skip;
 

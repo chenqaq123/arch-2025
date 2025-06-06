@@ -14,6 +14,7 @@ module mem_wb_reg
     import pipes::*;(
     input logic clk, reset,
     input logic flushM,
+    input logic csr_flush,
     input memory_data_t dataM_nxt,
     output memory_data_t dataM
 );
@@ -21,6 +22,8 @@ module mem_wb_reg
         if(reset) begin
             dataM <= '0; //valid也会为0
         end else if (flushM) begin
+            dataM.valid <= '0;
+        end else if (csr_flush) begin
             dataM.valid <= '0;
         end else begin
             dataM <= dataM_nxt;
