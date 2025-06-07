@@ -21,10 +21,17 @@ module csr_regs
     input logic csr_we,
     output u64 csr_rdata,
     input u1 isCSRRC,
+    input u1 exception,
     input u1 isEcall,
+    input u1 isInstrMisalign,
+    input u1 isIllegalINstr,
+    input u1 isLoadMisalign,
+    input u1 isStoreMisalign,
     input u1 isMRET,
     input u64 pc,
     output u64 next_pc,
+
+    input u64 interrupt_pc,
     
     // mcycle自增
     input logic mcycle_inc,
@@ -42,7 +49,12 @@ module csr_regs
     output u64 sstatus_out,
     output u64 mtval_out,
     output satp_t satp_out,
-    output u2 priviledgeMode_out
+    output u2 priviledgeMode_out,
+
+    input u1 trint,
+    input u1 swint, 
+    input u1 exint,
+    output u1 interrupt
 );
 
     // CSR寄存器定义
@@ -53,14 +65,144 @@ module csr_regs
     satp_t satp;
     u2 priviledgeMode;
 
+    u64 mtvec_nxt, mip_nxt, mie_nxt, mscratch_nxt;
+    u64 mcause_nxt, mtval_nxt, mepc_nxt, mcycle_nxt;
+    mstatus_t mstatus_nxt;
+    satp_t satp_nxt;
+    u2 priviledgeMode_nxt;
+
     // mhartid固定为0
     assign mhartid = '0;
     assign mhartid_out = {56'b0, mhartid[7:0]};
 
     // sstatus是mstatus的部分位
-    assign sstatus_out = mstatus & SSTATUS_MASK;
+    assign sstatus_out = mstatus_nxt & SSTATUS_MASK;
 
-    // mcycle计数器逻辑
+    u1 interrupt_pending;
+    u64 interrupt_cause;
+    u1 interrupt_valid;
+    assign interrupt_valid = ((priviledgeMode == PRIV_U) | mstatus.mie) & ~(csr_we & csr_addr_write == CSR_MSTATUS);
+    always_comb begin
+        interrupt_pending = 0;
+        interrupt_cause = 0;
+        if (interrupt_valid) begin
+            if (mip[MSIP] && mie[MSIP]) begin
+                interrupt_pending = 1;
+                interrupt_cause = MCAUSE_SOFTWARE_INTERRUPT;
+            end else if (mip[MTIP] && mie[MTIP]) begin
+                interrupt_pending = 1;
+                interrupt_cause = MCAUSE_TIMER_INTERRUPT;
+            end else if (mip[MEIP] && mie[MEIP]) begin
+                interrupt_pending = 1;
+                interrupt_cause = MCAUSE_EXTERNAL_INTERRUPT;
+            end
+        end
+    end
+
+    u64 exception_type;
+    always_comb begin
+        if (isEcall) begin
+            exception_type = MCAUSE_ECALL_U;
+        end else if (isInstrMisalign) begin
+            exception_type = MCAUSE_INSTRUCTION_ADDRESS_MISALIGNED;
+        end else if (isLoadMisalign) begin
+            exception_type = MCAUSE_LOAD_ADDRESS_MISALIGNED;
+        end else if (isStoreMisalign) begin
+            exception_type = MCAUSE_STORE_AMO_ADDRESS_MISALIGNED;
+        end else begin
+            exception_type = 0;
+        end
+        if (reset) begin
+            mstatus_nxt = '0;
+            mtvec_nxt = '0;
+            mip_nxt = '0;
+            mie_nxt = '0;
+            mscratch_nxt = '0;
+            mcause_nxt = '0;
+            mtval_nxt = '0;
+            mepc_nxt = '0;
+            satp_nxt = '0;
+            priviledgeMode_nxt = PRIV_M;
+        end else if (exception) begin
+            mepc_nxt = pc;
+            mcause_nxt = exception_type;
+            mstatus_nxt.mpie = mstatus.mie;
+            mstatus_nxt.mie = 0;
+            mstatus_nxt.mpp = priviledgeMode;
+            priviledgeMode_nxt = PRIV_M;
+        end else if (interrupt_pending) begin
+            mepc_nxt = interrupt_pc;
+            mcause_nxt = MCAUSE_INTERRUPT_MASK | interrupt_cause;
+            mstatus_nxt.mpie = mstatus.mie;
+            mstatus_nxt.mie = 0;
+            mstatus_nxt.mpp = priviledgeMode;
+            priviledgeMode_nxt = PRIV_M;
+        end else if (isMRET) begin
+            mstatus_nxt.mie = mstatus.mpie;
+            mstatus_nxt.mpie = 1;
+            priviledgeMode_nxt = mstatus.mpp;
+            mstatus_nxt.mpp = 0;
+            mstatus_nxt.xs = 0;
+        end else if (csr_we & isCSRRC) begin
+            unique case (csr_addr_write)
+                CSR_MSTATUS: mstatus_nxt = (mstatus & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MSTATUS_MASK);
+                CSR_MTVEC: mtvec_nxt = (mtvec & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MTVEC_MASK);
+                CSR_MIP: mip_nxt = (mip & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MIP_MASK);
+                CSR_MIE: mie_nxt = (mie & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_MSCRATCH: mscratch_nxt = (mscratch & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_MCAUSE: mcause_nxt = (mcause & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_MTVAL: mtval_nxt = (mtval & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_MEPC: mepc_nxt = (mepc & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                CSR_SATP: satp_nxt = (satp & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
+                default: ; // do nothing
+            endcase
+        end else if (csr_we) begin
+            unique case (csr_addr_write)
+                CSR_MSTATUS: mstatus_nxt = csr_wdata & MSTATUS_MASK;
+                CSR_MTVEC: mtvec_nxt = csr_wdata & MTVEC_MASK;
+                CSR_MIP: mip_nxt = csr_wdata & MIP_MASK;
+                CSR_MIE: mie_nxt = csr_wdata;
+                CSR_MSCRATCH: mscratch_nxt = csr_wdata;
+                CSR_MCAUSE: mcause_nxt = csr_wdata;
+                CSR_MTVAL: mtval_nxt = csr_wdata;
+                CSR_MEPC: mepc_nxt = csr_wdata;
+                CSR_SATP: satp_nxt = csr_wdata;
+                default: ; // do nothing
+            endcase
+        end
+
+        mip_nxt[MSIP] = swint;
+        mip_nxt[MTIP] = trint;
+        mip_nxt[MEIP] = exint;
+    end
+
+    always_ff @(posedge clk) begin
+        if (reset) begin
+            mstatus <= '0;
+            mtvec <= '0;
+            mip <= '0;
+            mie <= '0;
+            mscratch <= '0;
+            mcause <= '0;
+            mtval <= '0;
+            mepc <= '0;
+            satp <= '0;
+            priviledgeMode <= PRIV_M;
+        end else begin
+            mstatus <= mstatus_nxt;
+            mtvec <= mtvec_nxt;
+            mip <= mip_nxt;
+            mie <= mie_nxt;
+            mscratch <= mscratch_nxt;
+            mcause <= mcause_nxt;
+            mtval <= mtval_nxt;
+            mepc <= mepc_nxt;
+            satp <= satp_nxt;
+            priviledgeMode <= priviledgeMode_nxt;
+        end
+    end
+
+    // TODO  mcycle计数器逻辑
     always_ff @(posedge clk) begin
         if (reset) begin
             mcycle <= '0;
@@ -75,66 +217,11 @@ module csr_regs
         if (reset) begin
             next_pc = 0;
         end else if (isMRET) begin
-            next_pc = mepc;
-        end else if (isEcall) begin
-            next_pc = mtvec;
+            next_pc = mepc_nxt;
+        end else if (exception | interrupt_pending) begin
+            next_pc = mtvec_nxt;
         end else begin
             next_pc = 0;
-        end
-    end
-
-    // CSR读写逻辑
-    always_ff @(posedge clk) begin
-        if (reset) begin
-            mstatus <= '0;
-            mtvec <= '0;
-            mip <= '0;
-            mie <= '0;
-            mscratch <= '0;
-            mcause <= '0;
-            mtval <= '0;
-            mepc <= '0;
-            satp <= '0;
-            priviledgeMode <= 3;
-        end else if (isEcall) begin
-            mepc <= pc;
-            mcause <= 64'h0000000000000008;
-            mstatus.mpie <= mstatus.mie;
-            mstatus.mie <= 0;
-            mstatus.mpp <= priviledgeMode;
-            priviledgeMode <= 3;
-        end else if (isMRET) begin
-            mstatus.mie <= mstatus.mpie;
-            mstatus.mpie <= 1;
-            priviledgeMode <= mstatus_out.mpp;
-            mstatus.mpp <= 0;
-            mstatus.xs <= 0;
-        end else if (csr_we & isCSRRC) begin
-            unique case (csr_addr_write)
-                CSR_MSTATUS: mstatus <= (mstatus & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MSTATUS_MASK);
-                CSR_MTVEC: mtvec <= (mtvec & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MTVEC_MASK);
-                CSR_MIP: mip <= (mip & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F & MIP_MASK);
-                CSR_MIE: mie <= (mie & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
-                CSR_MSCRATCH: mscratch <= (mscratch & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
-                CSR_MCAUSE: mcause <= (mcause & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
-                CSR_MTVAL: mtval <= (mtval & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
-                CSR_MEPC: mepc <= (mepc & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
-                CSR_SATP: satp <= (satp & 64'hFFFFFFFFFFFFFFE0) | (csr_wdata & 64'h1F);
-                default: ; // do nothing
-            endcase
-        end else if (csr_we) begin
-            unique case (csr_addr_write)
-                CSR_MSTATUS: mstatus <= csr_wdata & MSTATUS_MASK;
-                CSR_MTVEC: mtvec <= csr_wdata & MTVEC_MASK;
-                CSR_MIP: mip <= csr_wdata & MIP_MASK;
-                CSR_MIE: mie <= csr_wdata;
-                CSR_MSCRATCH: mscratch <= csr_wdata;
-                CSR_MCAUSE: mcause <= csr_wdata;
-                CSR_MTVAL: mtval <= csr_wdata;
-                CSR_MEPC: mepc <= csr_wdata;
-                CSR_SATP: satp <= csr_wdata;
-                default: ; // do nothing
-            endcase
         end
     end
 
@@ -157,18 +244,19 @@ module csr_regs
     end
 
     // Difftest接口输出
-    assign mstatus_out = mstatus;
-    assign mtvec_out = mtvec;
-    assign mepc_out = mepc;
-    assign mcause_out = mcause;
-    assign mip_out = mip;
-    assign mie_out = mie;
-    assign mscratch_out = mscratch;
-    assign mcycle_out = mcycle;
-    assign mtval_out = mtval;
-    assign satp_out = satp;
-    assign priviledgeMode_out = priviledgeMode;
+    assign mstatus_out = mstatus_nxt;
+    assign mtvec_out = mtvec_nxt;
+    assign mepc_out = mepc_nxt;
+    assign mcause_out = mcause_nxt;
+    assign mip_out = mip_nxt;
+    assign mie_out = mie_nxt;
+    assign mscratch_out = mscratch_nxt;
+    assign mcycle_out = mcycle_nxt;
+    assign mtval_out = mtval_nxt;
+    assign satp_out = satp_nxt;
+    assign priviledgeMode_out = priviledgeMode_nxt;
 
+    assign interrupt = interrupt_pending;
 endmodule
 
 `endif

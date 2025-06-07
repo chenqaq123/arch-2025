@@ -123,13 +123,21 @@ typedef struct packed {
 	logic valid;
 } fetch_data_t;
 
-// typedef enum logic [5:0] { 
-// 	UNKNOWN,
-// 	ADDI, XORI, ORI, ANDI,
-// 	ADD, SUB, XOR, OR, AND,
-// 	ADDW, SUBW,
-// 	ADDIW
-// } decode_op_t; 
+typedef enum logic [5:0] { 
+	UNKNOWN,
+	ADDI, XORI, ORI, ANDI, SLTI, SLTIU, SLLI, SRLI, SRAI,
+	ADD, SUB, XOR, OR, AND, SLL, SRL, SRA, SLT, SLTU,
+	ADDIW, SLLIW, SRLIW, SRAIW,
+	ADDW, SUBW, SLLW, SRLW, SRAW,
+	LB, LH, LW, LD, LBU, LHU, LWU, 
+	SB, SH, SW, SD, 
+	BEQ, BNE, BLT, BLTU, BGE, BGEU,
+	LUI,
+	AUIPC,
+	JAL,
+	JALR,
+	CSRRW, CSRRS, CSRRC, CSRRWI, CSRRSI, CSRRCI, ECALL, MRET, FENCE
+} decode_op_t; 
 
 typedef enum logic [4:0] {
 	ALU_UNKNOWN,
@@ -160,7 +168,7 @@ typedef enum logic [3:0] {
 } BranchType;
 
 typedef struct packed {
-	// decode_op_t op;
+	decode_op_t op;
 	// ID阶段
 	ALUSRCType alusrc;
 	ImmGenType immGenType;
@@ -181,8 +189,14 @@ typedef struct packed {
 	u1 isCSR;
 	u1 CSR_FROM_zimm;
 	u1 isCSRRC;
+	u1 exception;
 	u1 isEcall;
 	u1 isMRET;
+	u1 instr_misalign;
+	u1 load_misalign;
+	u1 store_misalign;
+	u1 timer_intr;
+	u1 illegal_instr;
 } control_t;
 
 typedef struct packed {

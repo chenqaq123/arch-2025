@@ -65,9 +65,11 @@ module core
 	forwarding_control forwardingA, forwardingB;
 	forwarding_control forwardingAA, forwardingBB;
 
-	u1 ID_ecall_flag, EXE_ecall_flag;
+	u1 ID_exception, EXE_exception, MEM_exception, WB_exception;
+	u1 csr_flush;
 
 	u64 alu_out;
+	u1 interrupt;
 
 	// TODO 处理两个结构体
 	branch_data_t branch_ctl;
@@ -90,10 +92,10 @@ module core
 		.pc_jalr(pc_jalr_mem),
 		.pcSelect(branch_ctl.pcSelect),
 		.pc_nxt,
-		.CSR_flush(dataD.ctl.isCSR),
-		.isEcall(dataD.ctl.isEcall),
-		.isMRET(dataD.ctl.isMRET),
-        .csr_pc_plus_4(dataD.pc + 4),
+		.CSR_flush(dataM.ctl.isCSR & dataM.valid),
+		.exception((dataM.ctl.exception & dataM.valid) | interrupt),
+		.isMRET(dataM.ctl.isMRET & dataM.valid),
+        .csr_pc_plus_4(dataM.pc + 4),
 		.csr_next_pc(csr_next_pc)
 	);
 
@@ -103,7 +105,7 @@ module core
 
 	assign pc_write = hazard_ctl.PCWrite & ~stallpc & ~stallM;
 	logic pc_store;
-	assign pc_store = branch_ctl.flush | dataD.ctl.isCSR;
+	assign pc_store = branch_ctl.flush | (dataM.ctl.isCSR & dataM.valid) | (dataM.ctl.exception & dataM.valid) | interrupt;
 
 	pc pc(
 		.clk, .reset,
@@ -113,7 +115,7 @@ module core
 		.pc(IF_pc)
 	);
 
-	assign ireq.valid = (~ID_ecall_flag)&(~EXE_ecall_flag);
+	assign ireq.valid = (~ID_exception)&(~EXE_exception)&(~MEM_exception)&(~WB_exception);
 	assign ireq.addr = IF_pc;
 	assign raw_instr = iresp.data_ok ? iresp.data : 0;
 
@@ -128,7 +130,7 @@ module core
 
 	if_id_reg if_id_reg(
 		.clk, .reset,
-		.branch_ctl_flush(branch_ctl.flush | dataD.ctl.isCSR),
+		.branch_ctl_flush(branch_ctl.flush | csr_flush),
 		.stallpc,
 		.stallM,
 		.if_id_write(hazard_ctl.IF_ID_Write),
@@ -148,6 +150,7 @@ module core
 	assign ra2 = dataF.raw_instr[24:20];
 
 	decoder decoder(
+		.pc(dataF.pc),
 		.raw_instr(dataF.raw_instr),
 		.regUseType(regUseType),
 		.ctl(ctl_nxt)
@@ -194,18 +197,29 @@ module core
     u64 sstatus_out;
 	u64 mtval_out;
 	satp_t satp_out;
+
+	u64 interrupt_pc;
+	assign interrupt_pc = dataM.valid ? dataM.pc + 4 : dataE.valid ? dataE.pc : dataD.valid ? dataD.pc : dataF.valid ? dataF.pc : IF_pc;
+
 	csr_regs csr_regs(
 		.clk, .reset,
 		.csr_addr_read(dataF.raw_instr[31:20]),
-		.csr_addr_write(dataD.raw_instr[31:20]),
-		.csr_wdata(alu_out),
-		.csr_we(dataD.ctl.isCSR),
+		.csr_addr_write(dataM.raw_instr[31:20]),
+		.csr_wdata(dataM.alu_out),
+		.csr_we(dataM.ctl.isCSR & dataM.valid),
 		.csr_rdata(csr_rdata),
-		.isCSRRC(dataD.ctl.isCSRRC),
-		.isEcall(dataD.ctl.isEcall),
-		.isMRET(dataD.ctl.isMRET),
-		.pc(dataD.pc),
+		.isCSRRC(dataM.ctl.isCSRRC & dataM.valid),
+		.exception(dataM.ctl.exception & dataM.valid),
+		.isEcall(dataM.ctl.isEcall & dataM.valid),
+		.isInstrMisalign(dataM.ctl.instr_misalign & dataM.valid),
+		.isIllegalINstr(dataM.ctl.illegal_instr & dataM.valid),
+		.isLoadMisalign(dataM.ctl.load_misalign & dataM.valid),
+		.isStoreMisalign(dataM.ctl.store_misalign & dataM.valid),
+		.isMRET(dataM.ctl.isMRET & dataM.valid),
+		.pc(dataM.pc),
 		.next_pc(csr_next_pc),
+
+		.interrupt_pc(interrupt_pc),
 
 		.mcycle_inc(1'b1),
 
@@ -221,7 +235,10 @@ module core
 		.sstatus_out,
 		.mtval_out,
 		.satp_out,
-		.priviledgeMode_out(priviledgeMode)
+		.priviledgeMode_out(priviledgeMode),
+
+		.trint, .swint, .exint,
+		.interrupt
 	);
 
 	assign satp_mode = satp_out.mode;
@@ -253,7 +270,7 @@ module core
 	id_ex_reg id_ex_reg(
 		.clk, .reset,
 		.stall(stallM),
-		.flush(branch_ctl.flush),
+		.flush(branch_ctl.flush | csr_flush),
 		.dataD_nxt,
 		.dataD
 	);
@@ -331,6 +348,7 @@ module core
 	ex_mem_reg ex_mem_reg(
 		.clk, .reset,
 		.flush(branch_ctl.flush),
+		.csr_flush(csr_flush),
 		.stall(stallM),
 		.dataE_nxt,
 		.dataE
@@ -348,10 +366,12 @@ module core
 	);
 
 	memory memory(
+		.clk, .reset,
 		.dataE,
 		.dreq(dreq),
 		.stallM(stallM),
 		.flushM,
+		.csr_flush(csr_flush),
 		.dresp(dresp),
 		.dataM_nxt(dataM_nxt)
 	);
@@ -359,6 +379,7 @@ module core
 	mem_wb_reg mem_wb_reg(
 		.clk, .reset,
 		.flushM,
+		.csr_flush(csr_flush),
 		.dataM_nxt,
 		.dataM
 	);
@@ -373,8 +394,11 @@ module core
 		.wd(write_data)
 	);
 
-	assign ID_ecall_flag = dataD_nxt.ctl.isEcall;
-	assign EXE_ecall_flag = dataD.ctl.isEcall;
+	assign ID_exception = (dataD_nxt.ctl.isEcall | dataD_nxt.ctl.instr_misalign) & dataD_nxt.valid;
+	assign EXE_exception = (dataD.ctl.isEcall | dataD.ctl.instr_misalign) & dataD.valid;
+	assign MEM_exception = (dataE.ctl.isEcall | dataE.ctl.instr_misalign) & dataE.valid;
+	assign WB_exception = (dataM.ctl.isEcall | dataM.ctl.instr_misalign | dataM.ctl.load_misalign | dataM.ctl.store_misalign) & dataM.valid;
+	assign csr_flush = (dataM.ctl.isCSR | dataM.ctl.exception) & dataM.valid | interrupt;
 
 
 `ifdef VERILATOR

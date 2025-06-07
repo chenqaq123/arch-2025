@@ -14,11 +14,13 @@
 module memory
 	import common::*;
 	import pipes::*;(
+    input logic clk, reset,
     input execute_data_t dataE,
     output dbus_req_t dreq,
 
     output logic stallM,
     output logic flushM,
+    input logic csr_flush,
     input dbus_resp_t dresp,
     output memory_data_t dataM_nxt
 );
@@ -98,14 +100,48 @@ module memory
         .strobe(strobe)
     );
 
+    logic flush_dreq_res;
+
+    // 添加一个寄存器来记录是否在flush期间发起了访存请求
+    always_ff @(posedge clk) begin
+        if (reset) begin
+            flush_dreq_res <= 1'b0;
+        end else if (csr_flush && dreq.valid) begin
+            // 如果在flush期间发起了访存请求，记录下来
+            flush_dreq_res <= 1'b1;
+        end else if (dresp.data_ok) begin
+            // 当访存结果返回时，清除标记
+            flush_dreq_res <= 1'b0;
+        end
+    end
+
+    always_comb begin
+        dataM_nxt.ctl = dataE.ctl;
+        unique case (dataE.ctl.op)
+            LD: dataM_nxt.ctl.load_misalign = dataE.alu_out[2:0] != 3'b000;
+            LW, LWU: dataM_nxt.ctl.load_misalign = dataE.alu_out[1:0] != 2'b00;
+            LH, LHU: dataM_nxt.ctl.load_misalign = dataE.alu_out[0] != 1'b0;
+            LB, LBU: dataM_nxt.ctl.load_misalign = 0;
+            default: dataM_nxt.ctl.load_misalign = 0;
+        endcase
+        unique case (dataE.ctl.op)
+            SD: dataM_nxt.ctl.store_misalign = dataE.alu_out[2:0] != 3'b000;
+            SW: dataM_nxt.ctl.store_misalign = dataE.alu_out[1:0] != 2'b00;
+            SH: dataM_nxt.ctl.store_misalign = dataE.alu_out[0] != 1'b0;
+            SB: dataM_nxt.ctl.store_misalign = 0;
+            default: dataM_nxt.ctl.store_misalign = 0;
+        endcase
+        dataM_nxt.ctl.exception = dataM_nxt.ctl.exception | dataM_nxt.ctl.load_misalign | dataM_nxt.ctl.store_misalign;
+    end
+
     assign dataM_nxt.pc = dataE.pc;
     assign dataM_nxt.raw_instr = dataE.raw_instr;
 
-    assign dataM_nxt.ctl = dataE.ctl;
     assign dataM_nxt.dst = dataE.dst;
     assign dataM_nxt.alu_out = dataE.alu_out;
 
-    assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.alufunc != ALU_UNKNOWN);
+    // 修改valid信号的赋值，考虑flush_dreq_res
+    assign dataM_nxt.valid = dataE.valid & ~stallM & (dataE.ctl.op != UNKNOWN) & ~flush_dreq_res;
     assign dataM_nxt.MemReadData = rd;
     assign dataM_nxt.skip = skip;
 
