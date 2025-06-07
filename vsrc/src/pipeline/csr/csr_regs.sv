@@ -30,6 +30,8 @@ module csr_regs
     input u1 isMRET,
     input u64 pc,
     output u64 next_pc,
+
+    input u64 interrupt_pc,
     
     // mcycle自增
     input logic mcycle_inc,
@@ -47,7 +49,12 @@ module csr_regs
     output u64 sstatus_out,
     output u64 mtval_out,
     output satp_t satp_out,
-    output u2 priviledgeMode_out
+    output u2 priviledgeMode_out,
+
+    input u1 trint,
+    input u1 swint, 
+    input u1 exint,
+    output u1 interrupt
 );
 
     // CSR寄存器定义
@@ -70,6 +77,30 @@ module csr_regs
 
     // sstatus是mstatus的部分位
     assign sstatus_out = mstatus_nxt & SSTATUS_MASK;
+
+
+    // TODO 处理中断相关 有问题
+    u1 interrupt_pending;
+    u64 interrupt_cause;
+    u1 interrupt_valid;
+    // assign mip = {52'b0, exint, 3'b0, trint, 3'b0, swint, 3'b0};
+    assign interrupt_valid = (priviledgeMode == PRIV_U) | mstatus.mie;
+    always_comb begin
+        interrupt_pending = 0;
+        interrupt_cause = 0;
+        if (interrupt_valid) begin
+            if (mip[MSIP] && mie[MSIP]) begin
+                interrupt_pending = 1;
+                interrupt_cause = MCAUSE_SOFTWARE_INTERRUPT;
+            end else if (mip[MTIP] && mie[MTIP]) begin
+                interrupt_pending = 1;
+                interrupt_cause = MCAUSE_TIMER_INTERRUPT;
+            end else if (mip[MEIP] && mie[MEIP]) begin
+                interrupt_pending = 1;
+                interrupt_cause = MCAUSE_EXTERNAL_INTERRUPT;
+            end
+        end
+    end
 
     u64 exception_type;
     always_comb begin
@@ -98,6 +129,13 @@ module csr_regs
         end else if (exception) begin
             mepc_nxt = pc;
             mcause_nxt = exception_type;
+            mstatus_nxt.mpie = mstatus.mie;
+            mstatus_nxt.mie = 0;
+            mstatus_nxt.mpp = priviledgeMode;
+            priviledgeMode_nxt = PRIV_M;
+        end else if (interrupt_pending) begin
+            mepc_nxt = interrupt_pc;
+            mcause_nxt = MCAUSE_INTERRUPT_MASK | interrupt_cause;
             mstatus_nxt.mpie = mstatus.mie;
             mstatus_nxt.mie = 0;
             mstatus_nxt.mpp = priviledgeMode;
@@ -135,6 +173,10 @@ module csr_regs
                 default: ; // do nothing
             endcase
         end
+
+        mip_nxt[MSIP] = swint;
+        mip_nxt[MTIP] = trint;
+        mip_nxt[MEIP] = exint;
     end
 
     always_ff @(posedge clk) begin
@@ -179,7 +221,7 @@ module csr_regs
             next_pc = 0;
         end else if (isMRET) begin
             next_pc = mepc_nxt;
-        end else if (exception) begin
+        end else if (exception | interrupt_pending) begin
             next_pc = mtvec_nxt;
         end else begin
             next_pc = 0;
@@ -217,6 +259,7 @@ module csr_regs
     assign satp_out = satp_nxt;
     assign priviledgeMode_out = priviledgeMode_nxt;
 
+    assign interrupt = interrupt_pending;
 endmodule
 
 `endif
