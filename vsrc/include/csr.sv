@@ -88,6 +88,16 @@ package csr_pkg;
   parameter u64 MCAUSE_LOAD_PAGE_FAULT = 64'hd;
   parameter u64 MCAUSE_INTERRUPT_MASK = 64'h8000000000000000;
 
+  // Interrupt cause codes
+  parameter u64 MCAUSE_SOFTWARE_INTERRUPT = 64'h3;
+  parameter u64 MCAUSE_TIMER_INTERRUPT = 64'h7;
+  parameter u64 MCAUSE_EXTERNAL_INTERRUPT = 64'hb;
+
+  // Interrupt mie position
+  parameter u6 MSIP = 3;
+  parameter u6 MTIP = 7;
+  parameter u6 MEIP = 11;
+
   parameter u2 PRIV_U = 2'b00;
   parameter u2 PRIV_M = 2'b11;
 

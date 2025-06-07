@@ -69,6 +69,7 @@ module core
 	u1 csr_flush;
 
 	u64 alu_out;
+	u1 interrupt;
 
 	// TODO 处理两个结构体
 	branch_data_t branch_ctl;
@@ -92,7 +93,7 @@ module core
 		.pcSelect(branch_ctl.pcSelect),
 		.pc_nxt,
 		.CSR_flush(dataM.ctl.isCSR & dataM.valid),
-		.exception(dataM.ctl.exception & dataM.valid),
+		.exception((dataM.ctl.exception & dataM.valid) | interrupt),
 		.isMRET(dataM.ctl.isMRET & dataM.valid),
         .csr_pc_plus_4(dataM.pc + 4),
 		.csr_next_pc(csr_next_pc)
@@ -104,7 +105,7 @@ module core
 
 	assign pc_write = hazard_ctl.PCWrite & ~stallpc & ~stallM;
 	logic pc_store;
-	assign pc_store = branch_ctl.flush | (dataM.ctl.isCSR & dataM.valid) | (dataM.ctl.exception & dataM.valid);
+	assign pc_store = branch_ctl.flush | (dataM.ctl.isCSR & dataM.valid) | (dataM.ctl.exception & dataM.valid) | interrupt;
 
 	pc pc(
 		.clk, .reset,
@@ -196,6 +197,10 @@ module core
     u64 sstatus_out;
 	u64 mtval_out;
 	satp_t satp_out;
+
+	u64 interrupt_pc;
+	assign interrupt_pc = dataM.valid ? dataM.pc + 4 : dataE.valid ? dataE.pc : dataD.valid ? dataD.pc : dataF.valid ? dataF.pc : IF_pc;
+
 	csr_regs csr_regs(
 		.clk, .reset,
 		.csr_addr_read(dataF.raw_instr[31:20]),
@@ -214,6 +219,8 @@ module core
 		.pc(dataM.pc),
 		.next_pc(csr_next_pc),
 
+		.interrupt_pc(interrupt_pc),
+
 		.mcycle_inc(1'b1),
 
 		.mstatus_out,
@@ -228,7 +235,10 @@ module core
 		.sstatus_out,
 		.mtval_out,
 		.satp_out,
-		.priviledgeMode_out(priviledgeMode)
+		.priviledgeMode_out(priviledgeMode),
+
+		.trint, .swint, .exint,
+		.interrupt
 	);
 
 	assign satp_mode = satp_out.mode;
@@ -387,8 +397,8 @@ module core
 	assign ID_exception = (dataD_nxt.ctl.isEcall | dataD_nxt.ctl.instr_misalign) & dataD_nxt.valid;
 	assign EXE_exception = (dataD.ctl.isEcall | dataD.ctl.instr_misalign) & dataD.valid;
 	assign MEM_exception = (dataE.ctl.isEcall | dataE.ctl.instr_misalign) & dataE.valid;
-	assign WB_exception = (dataM.ctl.isEcall | dataM.ctl.instr_misalign) & dataM.valid;
-	assign csr_flush = (dataM.ctl.isCSR | dataM.ctl.exception) & dataM.valid;
+	assign WB_exception = (dataM.ctl.isEcall | dataM.ctl.instr_misalign | dataM.ctl.load_misalign | dataM.ctl.store_misalign) & dataM.valid;
+	assign csr_flush = (dataM.ctl.isCSR | dataM.ctl.exception) & dataM.valid | interrupt;
 
 
 `ifdef VERILATOR
