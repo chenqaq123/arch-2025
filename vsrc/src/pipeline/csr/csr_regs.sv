@@ -78,8 +78,6 @@ module csr_regs
     // sstatus是mstatus的部分位
     assign sstatus_out = mstatus_nxt & SSTATUS_MASK;
 
-
-    // TODO 处理中断相关 有问题
     u1 interrupt_pending;
     u64 interrupt_cause;
     u1 interrupt_valid;
