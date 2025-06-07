@@ -83,8 +83,7 @@ module csr_regs
     u1 interrupt_pending;
     u64 interrupt_cause;
     u1 interrupt_valid;
-    // assign mip = {52'b0, exint, 3'b0, trint, 3'b0, swint, 3'b0};
-    assign interrupt_valid = (priviledgeMode == PRIV_U) | mstatus.mie;
+    assign interrupt_valid = ((priviledgeMode == PRIV_U) | mstatus.mie) & ~(csr_we & csr_addr_write == CSR_MSTATUS);
     always_comb begin
         interrupt_pending = 0;
         interrupt_cause = 0;
